@@ -1,7 +1,7 @@
 % Autotester ID file. Add your student numbers and UTORids below in
 % the following order:
-% student1 number
-% student1 utorID
+% student1 number 1004721955
+% student1 utorID fengdian
 % student2 number
 % student2 utorID
 % (without the % sign!)
