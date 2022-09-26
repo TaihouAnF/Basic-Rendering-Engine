@@ -78,15 +78,21 @@ struct ray2D makeLightSourceRay(void)
  // ** REPLACE THE CODE BELOW with code that provides a valid ray that
  //    is consistent with the lightsource.
  
- ray.p.px=0;			// Ray's origin
- ray.p.py=0;
- ray.d.px=0;			// Ray's direction
- ray.d.py=0;
+ ray.p.px=lightsource.l.p.px;			// Ray's origin(old)
+ ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
+ 
+ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
+    ray.d.px=lightsource.l.d.px;			              // else, change direction to?
+    ray.d.py=lightsource.l.d.py;
+ } else {
+    // how do we do this.
+ }
+
  ray.inside_out=0;		// Initially 0 since the ray starts outside an object
  ray.monochromatic=0;		// Initially 0 since the ray is white (from lightsource)
- ray.R=0;			// Ray colour in RGB must be the same as the lightsource
- ray.G=0;
- ray.B=0;
+ ray.R=lightsource.R;			// Ray colour in RGB must be the same as the lightsource
+ ray.G=lightsource.G;
+ ray.B=lightsource.B;
  
  return(ray);			// Currently this returns dummy ray
 }
