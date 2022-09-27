@@ -82,10 +82,12 @@ struct ray2D makeLightSourceRay(void)
  ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
  
  if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
-    ray.d.px=lightsource.l.d.px;			              // else, change direction to?
+    ray.d.px=lightsource.l.d.px;	// else, change direction to?
     ray.d.py=lightsource.l.d.py;
  } else {
-    // how do we do this.
+    double rand_ang=((double)rand()/(RAND_MAX))*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+    ray.d.px=lightsource.l.p.px+cos(rand_ang);
+    ray.d.py=lightsource.l.p.py+sin(rand_ang); 
  }
 
  ray.inside_out=0;		// Initially 0 since the ray starts outside an object
@@ -94,7 +96,7 @@ struct ray2D makeLightSourceRay(void)
  ray.G=lightsource.G;
  ray.B=lightsource.B;
  
- return(ray);			// Currently this returns dummy ray
+ return(ray);			// Currently this returns dummy ray(old), now it should return correct ray
 }
 
 void propagateRay(struct ray2D *ray, int depth)
