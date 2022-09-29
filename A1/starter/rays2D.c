@@ -85,7 +85,7 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
-double rand_ang=((double)rand()/(RAND_MAX))*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=lightsource.l.p.px+cos(rand_ang);
 ray.d.py=lightsource.l.p.py+sin(rand_ang);
 }
@@ -142,11 +142,29 @@ void propagateRay(struct ray2D *ray, int depth)
  if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
  
- float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
- struct point2D intersectionPt = {
-   walls[3].w.p.px,
-   ray->p.py + lambda1 * ray->d.py
- };
+//  float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
+//  struct point2D intersectionPt = {
+//    walls[3].w.p.px,
+//    ray->p.py + lambda1 * ray->d.py
+//  };
+  double lambda_min = 0.0;
+    for (int i = 0; i < 4; i++) {
+      if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
+        if (ray->d.py != 0) {
+          double lambda = (walls[i].w.p.py - ray->p.py)/ray->d.py;
+          if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min)) {
+            lambda_min = lambda;  // only update when it is less than the current lambda_min
+          }
+        }                     // Else: The Ray parallel to this line.
+      } else {                // left/right-vertical walls, which x is fixed.
+        if (ray->d.px != 0) {
+          double lambda = (walls[i].w.p.px - ray->p.px)/ray->d.px;
+          if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min)) {
+            lambda_min = lambda;  // only update when it is less than the current lambda_min
+          }
+        }                     // Else: The Ray parallel to this line.
+      }
+    }
  
  // Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
  //          should help you figure out how to do that.
@@ -160,7 +178,7 @@ void propagateRay(struct ray2D *ray, int depth)
  //          Note that you must provide variables for intersectRay() to return
  //          the point of intersection, normal at intersection, lambda, material type,
  //          and refraction index for the closest object hit by the ray.
-
+intersectRay(ray, &intersectPt, &normal, &lambda, &material, &refraction_index);
  
  // Step 3 - Check whether the closest intersection with objects is closer than the
  //          closest intersection with a wall. Choose whichever is closer.
