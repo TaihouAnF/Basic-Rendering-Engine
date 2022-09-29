@@ -28,6 +28,17 @@ struct point2D{					// Points and vectors in 2D space
   double py;
 };
 
+
+struct circ2D{					// Simple 2D objects (circles in this case)
+  struct point2D c;	// Center location
+  double r;		// Circle radius
+  int material_type;	// Type of object:
+			//   0 - Mirror
+			//   1 - Scattering
+			//   2 - Refracting (transparent)
+  double r_idx;		// Index of refraction for transparent materials
+};
+
 struct ray2D{					// Rays in 2D
   struct point2D p;	// Ray origin
   struct point2D d;	// Ray direction
@@ -41,15 +52,6 @@ struct ray2D{					// Rays in 2D
 			//   from deep red to purple
 };
 
-struct circ2D{					// Simple 2D objects (circles in this case)
-  struct point2D c;	// Center location
-  double r;		// Circle radius
-  int material_type;	// Type of object:
-			//   0 - Mirror
-			//   1 - Scattering
-			//   2 - Refracting (transparent)
-  double r_idx;		// Index of refraction for transparent materials
-};
 
 struct wall2D{					// Walls in 2D
   struct ray2D w;	// The actual wall is just a ray, the origin is one endpoint, and origin + d 

@@ -31,17 +31,17 @@
 * COMPLETE THIS TEXT BOX:
 *
 * 1) Student Name:		Anson Feng
-* 2) Student Name:		
+* 2) Student Name:		Chou Lu Wei
 *
 * 1) Student number:  1004721955
-* 2) Student number:
+* 2) Student number:  1004295693
 * 
 * 1) UtorID           fengdian
-* 2) UtorID
+* 2) UtorID           choulu1
 * 
 * We hereby certify that the work contained here is our own
 *
-* ___Anson Feng_______             _____________________
+* ___Anson Feng_______             _____Choulu1______
 * (sign with your name)            (sign with your name)
 ********************************************************************************/
 
@@ -70,7 +70,7 @@ struct ray2D makeLightSourceRay(void)
  *         lightsource for the light propagation process.
  ************************************************************************/
  
- struct ray2D ray;
+ struct ray2D ray = {0};
 
  // This creates a dummy ray (which won't go anywhere since the direction
  // vector d=[0 0]!. But it's here so you see which data values you have to
@@ -80,15 +80,15 @@ struct ray2D makeLightSourceRay(void)
  
  ray.p.px=lightsource.l.p.px;			// Ray's origin(old)
  ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
- 
- if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
-    ray.d.px=lightsource.l.d.px;	// else, change direction to?
-    ray.d.py=lightsource.l.d.py;
- } else {
-    double rand_ang=((double)rand()/(RAND_MAX))*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
-    ray.d.px=lightsource.l.p.px+cos(rand_ang);
-    ray.d.py=lightsource.l.p.py+sin(rand_ang); 
- }
+
+if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
+ray.d.px=lightsource.l.d.px;	// else, change direction to?
+ray.d.py=lightsource.l.d.py;
+} else {
+double rand_ang=((double)rand()/(RAND_MAX))*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+ray.d.px=lightsource.l.p.px+cos(rand_ang);
+ray.d.py=lightsource.l.p.py+sin(rand_ang);
+}
 
  ray.inside_out=0;		// Initially 0 since the ray starts outside an object
  ray.monochromatic=0;		// Initially 0 since the ray is white (from lightsource)
@@ -142,7 +142,12 @@ void propagateRay(struct ray2D *ray, int depth)
  if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
  
-
+ float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
+ struct point2D intersectionPt = {
+   walls[3].w.p.px,
+   ray->p.py + lambda1 * ray->d.py
+ };
+ 
  // Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
  //          should help you figure out how to do that.
 
@@ -164,6 +169,16 @@ void propagateRay(struct ray2D *ray, int depth)
  //          the origin of the ray, and the intersection point (it will then draw a
  //          ray from the origin to the intersection). You also need to provide the
  //          ray's colour.
+ 
+ // test intersectRay by calling render ray
+struct point2D intersectPt = {0};
+struct point2D normal = {0};
+// set some large double value so that the first intersection will be the closest
+double lambda = 99999999999;
+int material = 0;
+double refraction_index = 0;
+intersectRay(ray, &intersectPt, &normal, &lambda, &material, &refraction_index);
+renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
 
 
  // Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
@@ -261,5 +276,53 @@ void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, doubl
   *        intersection that will be needed to determine how to bounce/refract the
   *	   ray.
   * *******************************************************************************/
-   
+ 
+ // Step 1: loop over all objects
+for (int i = 0; i < MAX_OBJECTS; i++) {
+    struct circ2D* c = &objects[i];
+    double A = dot(&ray->d, &ray->d);
+    double B =  2 * dot(&ray->d, &ray->p) - 2 * dot(&ray->d, &c->c);
+    double C = dot(&c->c, &c->c) - 2 * dot(&ray->p, &c->c) + dot(&ray->p, &ray->p) - pow(c->r,2);
+    //double A = dot(&ray->d, &ray->d);
+    //double B = 2 * dot(&ray->d, &ray->p);
+    //double C = dot(&ray->p, &ray->p) - pow(c->r,2);
+    // solve lambda using quadratic equation
+    double discrim = pow(B, 2) - 4 * A * C;
+    if (discrim < 0) {
+        continue;
+    }
+    double lambda1 = (-B + sqrt(discrim)) / (2 * A);
+    double lambda2 = (-B - sqrt(discrim)) / (2 * A);
+    // check if lambda is positive and smaller than current lambda
+    if (lambda1 > 0 && lambda1 < *lambda) {
+        // update lambda
+        *lambda = lambda1;
+        // update intersection point
+        p->px = ray->p.px + lambda1 * ray->d.px;
+        p->py = ray->p.py + lambda1 * ray->d.py;
+        // update normal
+        n->px = p->px + c->c.px;
+        n->py = p->py + c->c.py;
+        normalize(n);
+        // update material type
+        *type = c->material_type;
+        // update index of refraction
+        *r_idx = c->r_idx;
+    }
+    if (lambda2 > 0 && lambda2 < *lambda) {
+        // update lambda
+        *lambda = lambda2;
+        // update intersection point
+        p->px = ray->p.px + lambda2 * ray->d.px;
+        p->py = ray->p.py + lambda2 * ray->d.py;
+        // update normal
+        n->px = p->px + c->c.px;
+        n->py = p->py + c->c.py;
+        normalize(n);
+        // update material type
+        *type = c->material_type;
+        // update index of refraction
+        *r_idx = c->r_idx;
+    }
+}
 }

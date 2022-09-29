@@ -96,13 +96,17 @@ void buildScene(void)
  struct ray2D l;
 
  // Two spheres and one lightsource
- c.px=1.5;
- c.py=-1.5;
- addCirc(&c,.55,1,1.6);
+c.px=1.5;
+c.py=-1.5;
+//c.px=0;
+//c.py=0;
+addCirc(&c,.55,1,1.6);
 
- c.px=.5;
- c.py=-.5;
- addCirc(&c,.25,0,2.47);
+c.px=.6;
+c.py=-.5;
+//c.px=0;
+//c.py=0;
+addCirc(&c,.25,0,2.47);
 
  p.px=0.0;			// Set a light source at the origin, pointing in direction
  p.py=0.0;			// (1.0, -.8)  (remember that Y increases downward!)
