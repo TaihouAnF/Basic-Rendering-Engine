@@ -85,7 +85,7 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
-double rand_ang=((double)rand()/(RAND_MAX))*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+double rand_ang=((double)drand48())*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=lightsource.l.p.px+cos(rand_ang);
 ray.d.py=lightsource.l.p.py+sin(rand_ang);
 }
