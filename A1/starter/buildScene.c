@@ -108,6 +108,12 @@ c.py=-.5;
 //c.py=0;
 addCirc(&c,.25,0,2.47);
 
+c.px=1.5;
+c.py=1.5;
+//c.px=0;
+//c.py=0;
+addCirc(&c,.55,1,1.6);
+
  p.px=0.0;			// Set a light source at the origin, pointing in direction
  p.py=0.0;			// (1.0, -.8)  (remember that Y increases downward!)
  d.px=1.0;			// This ray should hit both spheres, so you can test your
@@ -116,7 +122,7 @@ addCirc(&c,.25,0,2.47);
  l.p=p;
  l.d=d;
  lightsource.l=l;
- lightsource.light_type=1;	// Change this to set the light source type to point or laser 
+ lightsource.light_type=0;	// Change this to set the light source type to point or laser 
  lightsource.R=1.0;		// Lightsource colour in RGB space. All values must be in [0,1]
  lightsource.G=1.0;		// and (1,1,1) is white
  lightsource.B=1.0;

@@ -179,6 +179,10 @@ int material = 0;
 double refraction_index = 0;
 intersectRay(ray, &intersectPt, &normal, &lambda, &material, &refraction_index);
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
+struct point2D intersectPt2 = {0};
+intersectPt2.px = ray->p.px + normal.px;
+intersectPt2.py = ray->p.py + normal.py;
+renderRay(&intersectPt, &intersectPt2, 0, 0, 1);
 
 
  // Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
@@ -283,9 +287,6 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     double A = dot(&ray->d, &ray->d);
     double B =  2 * dot(&ray->d, &ray->p) - 2 * dot(&ray->d, &c->c);
     double C = dot(&c->c, &c->c) - 2 * dot(&ray->p, &c->c) + dot(&ray->p, &ray->p) - pow(c->r,2);
-    //double A = dot(&ray->d, &ray->d);
-    //double B = 2 * dot(&ray->d, &ray->p);
-    //double C = dot(&ray->p, &ray->p) - pow(c->r,2);
     // solve lambda using quadratic equation
     double discrim = pow(B, 2) - 4 * A * C;
     if (discrim < 0) {
@@ -301,8 +302,8 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         p->px = ray->p.px + lambda1 * ray->d.px;
         p->py = ray->p.py + lambda1 * ray->d.py;
         // update normal
-        n->px = p->px + c->c.px;
-        n->py = p->py + c->c.py;
+        n->px = p->px - c->c.px;
+        n->py = p->py - c->c.py;
         normalize(n);
         // update material type
         *type = c->material_type;
@@ -316,8 +317,8 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         p->px = ray->p.px + lambda2 * ray->d.px;
         p->py = ray->p.py + lambda2 * ray->d.py;
         // update normal
-        n->px = p->px + c->c.px;
-        n->py = p->py + c->c.py;
+        n->px = p->px - c->c.px;
+        n->py = p->py - c->c.py;
         normalize(n);
         // update material type
         *type = c->material_type;
