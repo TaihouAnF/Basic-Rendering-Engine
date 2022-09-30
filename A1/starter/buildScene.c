@@ -114,6 +114,7 @@ c.py=1.5;
 //c.py=0;
 addCirc(&c,.55,1,1.6);
 
+
  p.px=0.0;			// Set a light source at the origin, pointing in direction
  p.py=0.0;			// (1.0, -.8)  (remember that Y increases downward!)
  d.px=1.0;			// This ray should hit both spheres, so you can test your

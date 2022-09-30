@@ -139,7 +139,7 @@ void propagateRay(struct ray2D *ray, int depth)
  
  // Define your local variables here
  
- if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
+if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
  
 //  float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
@@ -147,25 +147,28 @@ void propagateRay(struct ray2D *ray, int depth)
 //    walls[3].w.p.px,
 //    ray->p.py + lambda1 * ray->d.py
 //  };
-  double lambda_min = 0.0;
-    for (int i = 0; i < 4; i++) {
-      if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
-        if (ray->d.py != 0) {
-          double lambda = (walls[i].w.p.py - ray->p.py)/ray->d.py;
-          if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min)) {
-            lambda_min = lambda;  // only update when it is less than the current lambda_min
-          }
-        }                     // Else: The Ray parallel to this line.
-      } else {                // left/right-vertical walls, which x is fixed.
-        if (ray->d.px != 0) {
-          double lambda = (walls[i].w.p.px - ray->p.px)/ray->d.px;
-          if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min)) {
-            lambda_min = lambda;  // only update when it is less than the current lambda_min
-          }
-        }                     // Else: The Ray parallel to this line.
+double lambda_min = 0.0;
+for (int i = 0; i < 4; i++) {
+  if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
+    if (ray->d.py != 0) {
+      double lambda = (walls[i].w.p.py - ray->p.py)/ray->d.py;
+      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0)) {
+        lambda_min = lambda;  // only update when it is less than the current lambda_min
       }
-    }
+    }                     // Else: The Ray parallel to this line.
+  } else {                // left/right-vertical walls, which x is fixed.
+    if (ray->d.px != 0) {
+      double lambda = (walls[i].w.p.px - ray->p.px)/ray->d.px;
+      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0)) {
+        lambda_min = lambda;  // only update when it is less than the current lambda_min
+      }
+    }                     // Else: The Ray parallel to this line.
+  }
+}
  
+
+
+
  // Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
  //          should help you figure out how to do that.
 
@@ -178,71 +181,77 @@ void propagateRay(struct ray2D *ray, int depth)
  //          Note that you must provide variables for intersectRay() to return
  //          the point of intersection, normal at intersection, lambda, material type,
  //          and refraction index for the closest object hit by the ray.
-intersectRay(ray, &intersectPt, &normal, &lambda, &material, &refraction_index);
- 
- // Step 3 - Check whether the closest intersection with objects is closer than the
- //          closest intersection with a wall. Choose whichever is closer.
 
- // Step 4 - Render the ray onto the image. Use renderRay(). Provide renderRay() with
- //          the origin of the ray, and the intersection point (it will then draw a
- //          ray from the origin to the intersection). You also need to provide the
- //          ray's colour.
- 
- // test intersectRay by calling render ray
-struct point2D intersectPt = {0};
-struct point2D normal = {0};
-// set some large double value so that the first intersection will be the closest
-double lambda = 99999999999;
-int material = 0;
-double refraction_index = 0;
-intersectRay(ray, &intersectPt, &normal, &lambda, &material, &refraction_index);
-renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
-struct point2D intersectPt2 = {0};
-intersectPt2.px = ray->p.px + normal.px;
-intersectPt2.py = ray->p.py + normal.py;
-renderRay(&intersectPt, &intersectPt2, 0, 0, 1);
+struct point2D intersectPt;
+struct point2D normal;
+double lambda_intersect = lambda_min;
+int material_type = 0;
+double refraction_index = 0.0;
+intersectRay(ray, &intersectPt, &normal, &lambda_intersect, &material_type, &refraction_index);
+struct point2D rayIntersect;
+rayIntersect.px = ray->p.px + lambda_intersect * ray->d.px;
+rayIntersect.py = ray->p.py + lambda_intersect * ray->d.py;
+// Step 4 - Render the ray onto the image. Use renderRay(). Provide renderRay() with
+//          the origin of the ray, and the intersection point (it will then draw a
+//          ray from the origin to the intersection). You also need to provide the
+//          ray's colour.
+renderRay(&ray->p, &rayIntersect, ray->R, ray->G, ray->B);
+// draw the normal at the intersection point
+if (lambda_intersect != lambda_min) {
+  struct point2D normalPt;
+  normalPt.px = intersectPt.px + normal.px;
+  normalPt.py = intersectPt.py + normal.py;
+  renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
+  if (material_type == 0) {
+
+  } else if (material_type == 1) {
+    
+  }
+}
 
 
- // Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
- //          to provide code for 3 cases:
- //          If material type = 0, you have a mirror-reflecting object. 
- //                                Create a ray in the mirror reflection direction,
- //                                with the same colour as the incoming ray, and
- //                                with origin at the intersection point.
- //                                Then call propagateRay() recursively to trace it.
- //          if material type = 1, you have a scattering surface. 
- //                                Choose a random direction within +- 90 degrees 
- //                                from the normal at the intersection. Create a
- //                                ray in this direction, with the same colour as
- //                                the incoming ray, and origin at the intersection,
- //                                then call propagateRay() recursively to trace it.
- //          if material type = 2, you have a refracting (transparent) material.
- // 				   Here you need to process two rays:
- //                                * First, determine how much of the incoming light is
- //                                  reflected and how much is transmitted, using 
- //				     Schlick's approximation:
- // 					 R0 = ((n1-n2)/(n1+n2))^2   
- // 					 R(theta)=R0+((1-R0)*(1-cos(theta))^5)
- //				     If the ray is travelling from air to the inside
- //                                  of an object, n1=1, n2=object's index of refraction.
- //                                  If the ray is travelling from inside an object
- //                                  back onto air, n1=object's index of refraction, n2=1
- //				     And 'theta' is the angle between the normal and the
- // 				     ray direction.
- //				     R(theta) gives the amount Rs of reflected light, 
- //				     1.0-R(theta) gives the amount Rt of transmitted light.
- //                                * Now, make a ray in the mirror-reflection direction
- //				     (same as for material type 0), with the same colour
- //				     as the incoming ray, but with intensity modulated
- //				     by Rs. (e.g. if the incoming's colour is R,G,B,
- //                                  the reflected ray's colour will be R*Rs, G*Rs, B*Rs)
- //				     trace this ray.
- //				   * Make a ray in the refracted-ray direction. The 
- //				     angle for the transmitted ray is given by Snell's law
- //				     n1*sin(theta1) = n2*sin(theta2). The colour of the
- //				     transmitted ray is the same as the incoming ray but
- //			             modulated by Rt. Trace this ray.
+
+// Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
+//          to provide code for 3 cases:
+//          If material type = 0, you have a mirror-reflecting object. 
+//                                Create a ray in the mirror reflection direction,
+//                                with the same colour as the incoming ray, and
+//                                with origin at the intersection point.
+//                                Then call propagateRay() recursively to trace it.
+//          if material type = 1, you have a scattering surface. 
+//                                Choose a random direction within +- 90 degrees 
+//                                from the normal at the intersection. Create a
+//                                ray in this direction, with the same colour as
+//                                the incoming ray, and origin at the intersection,
+//                                then call propagateRay() recursively to trace it.
+//          if material type = 2, you have a refracting (transparent) material.
+// 				   Here you need to process two rays:
+//                                * First, determine how much of the incoming light is
+//                                  reflected and how much is transmitted, using 
+//				     Schlick's approximation:
+// 					 R0 = ((n1-n2)/(n1+n2))^2   
+// 					 R(theta)=R0+((1-R0)*(1-cos(theta))^5)
+//				     If the ray is travelling from air to the inside
+//                                  of an object, n1=1, n2=object's index of refraction.
+//                                  If the ray is travelling from inside an object
+//                                  back onto air, n1=object's index of refraction, n2=1
+//				     And 'theta' is the angle between the normal and the
+// 				     ray direction.
+//				     R(theta) gives the amount Rs of reflected light, 
+//				     1.0-R(theta) gives the amount Rt of transmitted light.
+//                                * Now, make a ray in the mirror-reflection direction
+//				     (same as for material type 0), with the same colour
+//				     as the incoming ray, but with intensity modulated
+//				     by Rs. (e.g. if the incoming's colour is R,G,B,
+//                                  the reflected ray's colour will be R*Rs, G*Rs, B*Rs)
+//				     trace this ray.
+//				   * Make a ray in the refracted-ray direction. The 
+//				     angle for the transmitted ray is given by Snell's law
+//				     n1*sin(theta1) = n2*sin(theta2). The colour of the
+//				     transmitted ray is the same as the incoming ray but
+//			             modulated by Rt. Trace this ray.
  //	That's it! you're done!
+
    
 }
 
@@ -302,6 +311,9 @@ void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, doubl
  // Step 1: loop over all objects
 for (int i = 0; i < MAX_OBJECTS; i++) {
     struct circ2D* c = &objects[i];
+    if (c->r ==  -1) {
+      continue;
+    }
     double A = dot(&ray->d, &ray->d);
     double B =  2 * dot(&ray->d, &ray->p) - 2 * dot(&ray->d, &c->c);
     double C = dot(&c->c, &c->c) - 2 * dot(&ray->p, &c->c) + dot(&ray->p, &ray->p) - pow(c->r,2);
@@ -310,6 +322,7 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     if (discrim < 0) {
         continue;
     }
+    printf("Intersection\n");
     double lambda1 = (-B + sqrt(discrim)) / (2 * A);
     double lambda2 = (-B - sqrt(discrim)) / (2 * A);
     // check if lambda is positive and smaller than current lambda
