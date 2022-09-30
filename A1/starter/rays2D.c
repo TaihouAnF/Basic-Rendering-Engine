@@ -203,8 +203,23 @@ if (lambda_intersect != lambda_min) {
   normalPt.py = intersectPt.py + normal.py;
   renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
   if (material_type == 0) {
+<<<<<<< HEAD
     //acos()
 
+=======
+    struct ray2D refl_ray;
+    refl_ray.p.px=intersectPt.px;
+    refl_ray.p.py=intersectPt.py;
+    refl_ray.B=ray->B;
+    refl_ray.G=ray->G;
+    refl_ray.R=ray->R;
+    refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
+    refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
+    refl_ray.inside_out=ray->inside_out;
+    refl_ray.H=ray->H;
+    refl_ray.monochromatic=ray->monochromatic;
+    propagateRay(&refl_ray, depth++);
+>>>>>>> 26c45327e75d3388544780344b891e876af834f8
   } else if (material_type == 1) {
     
   }
