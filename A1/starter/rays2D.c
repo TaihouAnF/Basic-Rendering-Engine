@@ -85,7 +85,7 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
-double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+double rand_ang=(double)rand()/RAND_MAX*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=lightsource.l.p.px+cos(rand_ang);
 ray.d.py=lightsource.l.p.py+sin(rand_ang);
 }
@@ -201,7 +201,7 @@ if (lambda_intersect != lambda_min) {
   // struct point2D normalPt;
   // normalPt.px = intersectPt.px + normal.px;
   // normalPt.py = intersectPt.py + normal.py;
-  renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
+  // renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
   // This is for reflection
   if (material_type == 0) {
     struct ray2D refl_ray;
@@ -217,7 +217,7 @@ if (lambda_intersect != lambda_min) {
     refl_ray.monochromatic=ray->monochromatic;
     propagateRay(&refl_ray, depth+1);
   } else if (material_type == 1) {
-    double rand_an = drand48()*PI;
+    double rand_an = (double)rand()/RAND_MAX*PI;
     struct point2D tang;
     tang.px = -normal.py;
     tang.py = normal.px;
