@@ -203,6 +203,7 @@ if (lambda_intersect != lambda_min) {
   normalPt.py = intersectPt.py + normal.py;
   renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
   if (material_type == 0) {
+    //acos()
 
   } else if (material_type == 1) {
     
