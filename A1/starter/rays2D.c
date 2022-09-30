@@ -85,7 +85,7 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
-double rand_ang=(double)rand()/RAND_MAX*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
+double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=lightsource.l.p.px+cos(rand_ang);
 ray.d.py=lightsource.l.p.py+sin(rand_ang);
 }
@@ -152,21 +152,24 @@ for (int i = 0; i < 4; i++) {
   if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
     if (ray->d.py != 0) {
       double lambda = (walls[i].w.p.py - ray->p.py)/ray->d.py;
-      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0)) {
+      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
         lambda_min = lambda;  // only update when it is less than the current lambda_min
       }
     }                     // Else: The Ray parallel to this line.
   } else {                // left/right-vertical walls, which x is fixed.
     if (ray->d.px != 0) {
       double lambda = (walls[i].w.p.px - ray->p.px)/ray->d.px;
-      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0)) {
+      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
         lambda_min = lambda;  // only update when it is less than the current lambda_min
       }
     }                     // Else: The Ray parallel to this line.
   }
 }
- 
-
+normalize(&normal_wall);
+struct point2D intersectWall;
+intersectWall.px = ray->p.px + lambda_min*(ray->d.px);
+intersectWall.py = ray->p.px + lambda_min*(ray->d.py);
+printf("Located at %f, %f\n", intersectWall.px, intersectWall.py);
 
 
  // Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
@@ -198,10 +201,10 @@ rayIntersect.py = ray->p.py + lambda_intersect * ray->d.py;
 renderRay(&ray->p, &rayIntersect, ray->R, ray->G, ray->B);
 // draw the normal at the intersection point debugging
 if (lambda_intersect != lambda_min) {
-  // struct point2D normalPt;
-  // normalPt.px = intersectPt.px + normal.px;
-  // normalPt.py = intersectPt.py + normal.py;
-  // renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
+  struct point2D normalPt;
+  normalPt.px = intersectPt.px + normal.px;
+  normalPt.py = intersectPt.py + normal.py;
+  renderRay(&rayIntersect, &normalPt, 1.0, 0.0, 0.0);
   // This is for reflection
   if (material_type == 0) {
     struct ray2D refl_ray;
@@ -216,16 +219,14 @@ if (lambda_intersect != lambda_min) {
     refl_ray.H=ray->H;
     refl_ray.monochromatic=ray->monochromatic;
     propagateRay(&refl_ray, depth+1);
+
   } else if (material_type == 1) {
-    double rand_an = (double)rand()/RAND_MAX*PI;
-    struct point2D tang;
-    tang.px = -normal.py;
-    tang.py = normal.px;
+    double rand_an = (drand48()-0.5)*PI;
     struct ray2D scat_ray;
     scat_ray.p.px=intersectPt.px;
     scat_ray.p.py=intersectPt.py;
-    scat_ray.d.px=tang.px+cos(rand_an);
-    scat_ray.d.py=tang.py+sin(rand_an);
+    scat_ray.d.px=normal.px*cos(rand_an) - normal.py*sin(rand_an);
+    scat_ray.d.py=normal.py*sin(rand_an) + normal.py*cos(rand_an);
     scat_ray.R=ray->R;
     scat_ray.G=ray->G;
     scat_ray.B=ray->B;
@@ -233,8 +234,9 @@ if (lambda_intersect != lambda_min) {
     scat_ray.inside_out=ray->inside_out;
     scat_ray.monochromatic=ray->monochromatic;
     propagateRay(&scat_ray, depth+1);
-  } else if(material_type == 2) {
 
+  } else if(material_type == 2) {
+    
   }
 }
 
@@ -278,8 +280,6 @@ if (lambda_intersect != lambda_min) {
 //				     transmitted ray is the same as the incoming ray but
 //			             modulated by Rt. Trace this ray.
  //	That's it! you're done!
-
-   
 }
 
 void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, double *lambda, int *type, double *r_idx)
@@ -352,7 +352,7 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     double lambda1 = (-B + sqrt(discrim)) / (2 * A);
     double lambda2 = (-B - sqrt(discrim)) / (2 * A);
     // check if lambda is positive and smaller than current lambda
-    if (lambda1 > 0 && lambda1 < *lambda) {
+    if (lambda1 > 0.001 && lambda1 < *lambda) {
         // update lambda
         *lambda = lambda1;
         // update intersection point
@@ -367,7 +367,7 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         // update index of refraction
         *r_idx = c->r_idx;
     }
-    if (lambda2 > 0 && lambda2 < *lambda) {
+    if (lambda2 > 0.001 && lambda2 < *lambda) {
         // update lambda
         *lambda = lambda2;
         // update intersection point
