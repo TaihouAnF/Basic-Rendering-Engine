@@ -82,8 +82,10 @@ struct ray2D makeLightSourceRay(void)
  ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
 
 if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
-ray.d.px=lightsource.l.d.px;	// else, change direction to?
-ray.d.py=lightsource.l.d.py;
+//ray.d.px=lightsource.l.d.px;	// else, change direction to?
+//ray.d.py=lightsource.l.d.py;
+ray.d.px=0.711451;
+ray.d.py=-0.702736;
 } else {
 double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=lightsource.l.p.px+cos(rand_ang);
@@ -138,10 +140,10 @@ void propagateRay(struct ray2D *ray, int depth)
   ********************************************************************************/
  
  // Define your local variables here
- 
+printf("depth: %d\n", depth); 
 if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
- 
+
 //  float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
 //  struct point2D intersectionPt = {
 //    walls[3].w.p.px,
@@ -191,11 +193,16 @@ intersectRay(ray, &intersectPt, &normal, &lambda_intersect, &material_type, &ref
 struct point2D rayIntersect;
 rayIntersect.px = ray->p.px + lambda_intersect * ray->d.px;
 rayIntersect.py = ray->p.py + lambda_intersect * ray->d.py;
+
 // Step 4 - Render the ray onto the image. Use renderRay(). Provide renderRay() with
 //          the origin of the ray, and the intersection point (it will then draw a
 //          ray from the origin to the intersection). You also need to provide the
 //          ray's colour.
 renderRay(&ray->p, &rayIntersect, ray->R, ray->G, ray->B);
+//struct point2D reflection;
+//reflection.px = -0.969992;
+//reflection.px = 0.243136;
+//renderRay(&ray->p, &reflection, ray->R, ray->G, ray->B);
 // draw the normal at the intersection point
 if (lambda_intersect != lambda_min) {
   struct point2D normalPt;
@@ -214,9 +221,35 @@ if (lambda_intersect != lambda_min) {
     refl_ray.inside_out=ray->inside_out;
     refl_ray.H=ray->H;
     refl_ray.monochromatic=ray->monochromatic;
-    propagateRay(&refl_ray, depth++);
+    //if (abs(refl_ray.d.px- ray->d.px) < 10 && abs(refl_ray.d.px- ray->d.px) < 10) {
+    //  printf("reflected ray is the same direction as incoming ray at (%f, %f)\n", abs(refl_ray.d.px- ray->d.px), abs(refl_ray.d.py- ray->d.py));
+    //}
+    //printf("originating ray x:(%f) y:(%f) dx:(%f) dy=(%f)\n", ray->p.px, ray->p.py, ray->d.px, ray->d.py);
+    //printf("reflected ray x:(%f) y:(%f) dx:(%f) dy=(%f)\n", refl_ray.p.px, refl_ray.p.py, refl_ray.d.px, refl_ray.d.py);
+    propagateRay(&refl_ray, depth + 1);
   } else if (material_type == 1) {
-    
+    struct ray2D refl_ray;
+    refl_ray.p.px=intersectPt.px;
+    refl_ray.p.py=intersectPt.py;
+    refl_ray.B=ray->B;
+    refl_ray.G=ray->G;
+    refl_ray.R=ray->R;
+    struct point2D xAxis;
+    xAxis.px = 1.0;
+    xAxis.py = 0.0;
+    //compare the normal with the x-axis
+    double theta = acos(dot(&normal, &xAxis) / sqrt(dot(&normal, &normal) * dot(&xAxis, &xAxis)));
+    refl_ray.p.px=intersectPt.px;
+    refl_ray.p.py=intersectPt.py;
+    refl_ray.B=ray->B;
+    refl_ray.G=ray->G;
+    refl_ray.R=ray->R;
+    refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
+    refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
+    refl_ray.inside_out=ray->inside_out;
+    refl_ray.H=ray->H;
+    double rand_ang= drand48()*PI/2 - drand48()*PI/2;   // Using rand()/RAND_MAX to get number from [-pi/2, pi/2]
+    printf("rand_ang: %f", rand_ang);
   }
 }
 
@@ -333,7 +366,6 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     if (discrim < 0) {
         continue;
     }
-    printf("Intersection\n");
     double lambda1 = (-B + sqrt(discrim)) / (2 * A);
     double lambda2 = (-B - sqrt(discrim)) / (2 * A);
     // check if lambda is positive and smaller than current lambda
