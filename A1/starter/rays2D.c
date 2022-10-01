@@ -141,35 +141,31 @@ void propagateRay(struct ray2D *ray, int depth)
  
 if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
- 
-//  float lambda1 = (ray->p.px - walls[3].w.p.px) / ray->d.px;
-//  struct point2D intersectionPt = {
-//    walls[3].w.p.px,
-//    ray->p.py + lambda1 * ray->d.py
-//  };
+
+struct point2D intersectPt;
+struct point2D normal;
+int material_type = 0;
+double refraction_index = 0.0;
 double lambda_min = 0.0;
+
 for (int i = 0; i < 4; i++) {
   if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
     if (ray->d.py != 0) {
       double lambda = (walls[i].w.p.py - ray->p.py)/ray->d.py;
-      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
+      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
         lambda_min = lambda;  // only update when it is less than the current lambda_min
+        intersectPt.px = 
       }
     }                     // Else: The Ray parallel to this line.
   } else {                // left/right-vertical walls, which x is fixed.
     if (ray->d.px != 0) {
       double lambda = (walls[i].w.p.px - ray->p.px)/ray->d.px;
-      if ((lambda_min == 0.0 && lambda > 0) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
+      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda_min != 0.0 && lambda < lambda_min && lambda > 0.01)) {
         lambda_min = lambda;  // only update when it is less than the current lambda_min
       }
     }                     // Else: The Ray parallel to this line.
   }
 }
-normalize(&normal_wall);
-struct point2D intersectWall;
-intersectWall.px = ray->p.px + lambda_min*(ray->d.px);
-intersectWall.py = ray->p.px + lambda_min*(ray->d.py);
-printf("Located at %f, %f\n", intersectWall.px, intersectWall.py);
 
 
  // Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
@@ -185,20 +181,16 @@ printf("Located at %f, %f\n", intersectWall.px, intersectWall.py);
  //          the point of intersection, normal at intersection, lambda, material type,
  //          and refraction index for the closest object hit by the ray.
 
-struct point2D intersectPt;
-struct point2D normal;
 double lambda_intersect = lambda_min;
-int material_type = 0;
-double refraction_index = 0.0;
 intersectRay(ray, &intersectPt, &normal, &lambda_intersect, &material_type, &refraction_index);
-struct point2D rayIntersect;
-rayIntersect.px = ray->p.px + lambda_intersect * ray->d.px;
-rayIntersect.py = ray->p.py + lambda_intersect * ray->d.py;
+// struct point2D rayIntersect;
+// rayIntersect.px = ray->p.px + lambda_intersect * ray->d.px;
+// rayIntersect.py = ray->p.py + lambda_intersect * ray->d.py;
 // Step 4 - Render the ray onto the image. Use renderRay(). Provide renderRay() with
 //          the origin of the ray, and the intersection point (it will then draw a
 //          ray from the origin to the intersection). You also need to provide the
 //          ray's colour.
-renderRay(&ray->p, &rayIntersect, ray->R, ray->G, ray->B);
+renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
 // draw the normal at the intersection point debugging
 if (lambda_intersect != lambda_min) {
   struct point2D normalPt;
@@ -226,7 +218,7 @@ if (lambda_intersect != lambda_min) {
     scat_ray.p.px=intersectPt.px;
     scat_ray.p.py=intersectPt.py;
     scat_ray.d.px=normal.px*cos(rand_an) - normal.py*sin(rand_an);
-    scat_ray.d.py=normal.py*sin(rand_an) + normal.py*cos(rand_an);
+    scat_ray.d.py=normal.px*sin(rand_an) + normal.py*cos(rand_an);
     scat_ray.R=ray->R;
     scat_ray.G=ray->G;
     scat_ray.B=ray->B;
