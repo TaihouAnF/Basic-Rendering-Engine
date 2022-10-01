@@ -144,6 +144,8 @@ struct point2D normal;
 int material_type = 0;
 double refraction_index = 0.0;
 double lambda_min = 0.0;
+intersectPt.px=ray->p.px;
+intersectPt.py=ray->p.py;
 
 if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
 					// recurse forever
@@ -156,17 +158,18 @@ for (int i = 0; i < 4; i++) {
       temp_normal_wall.px = -walls[i].w.d.py;
       temp_normal_wall.py = walls[i].w.d.px;
 
-      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda < lambda_min && lambda > 0.01)) {
-        lambda_min = lambda;  // only update when it is less than the current lambda_min
+      if ((lambda_min == 0.0 && lambda > 0.0) || (lambda < lambda_min && lambda > 0.0)) {
+        if (lambda > 0.01 && ray->p.px + lambda*ray->d.px <= W_RIGHT && ray->p.px + lambda*ray->d.px >= W_LEFT) {
+          lambda_min = lambda;  // only update when it is less than the current lambda_min, and ignore those tiny value, if all true, we update the intersectiPt
+          intersectPt.px = ray->p.px + lambda_min*ray->d.px;
+          intersectPt.py = ray->p.py + lambda_min*ray->d.py;
+        }
         
-        intersectPt.px = ray->p.px + lambda_min*ray->d.px;
-        intersectPt.py = ray->p.py + lambda_min*ray->d.py;
-        // printf("y lambda: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
-
-        normal.px = temp_normal_wall.px;
-        normal.py = temp_normal_wall.py;
-
-        normalize(&normal);
+        if (ray->p.px + lambda*ray->d.px <= W_RIGHT && ray->p.px + lambda*ray->d.px >= W_LEFT) { // Only update normal when intersect is not out of bound
+          normal.px = temp_normal_wall.px;
+          normal.py = temp_normal_wall.py;
+          normalize(&normal);
+        }
 
         material_type = walls[i].material_type;
       }
@@ -177,17 +180,19 @@ for (int i = 0; i < 4; i++) {
       struct point2D temp_normal_wall;
       temp_normal_wall.px = -walls[i].w.d.py;
       temp_normal_wall.py = walls[i].w.d.px;
-      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda < lambda_min && lambda > 0.01)) {
-        lambda_min = lambda;  // only update when it is less than the current lambda_min
 
-        intersectPt.px = ray->p.px + lambda_min*ray->d.px;
-        intersectPt.py = ray->p.py + lambda_min*ray->d.py;
-        // printf("x lambda: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
+      if ((lambda_min == 0.0 && lambda > 0.0) || (lambda < lambda_min && lambda > 0.0)) {
+        if (lambda > 0.01 && ray->p.py + lambda*ray->d.py <= W_BOTTOM && ray->p.py + lambda*ray->d.py >= W_TOP) {
+          lambda_min = lambda;  // only update when it is less than the current lambda_min and same as above.
+          intersectPt.px = ray->p.px + lambda_min*ray->d.px;
+          intersectPt.py = ray->p.py + lambda_min*ray->d.py;
+        }
 
-        normal.px = temp_normal_wall.px;
-        normal.py = temp_normal_wall.py;
-
-        normalize(&normal);
+        if (ray->p.py + lambda*ray->d.py <= W_BOTTOM && ray->p.py + lambda*ray->d.py >= W_TOP) {
+          normal.px = temp_normal_wall.px;
+          normal.py = temp_normal_wall.py;
+          normalize(&normal);
+        }  
 
         material_type = walls[i].material_type;
       }
@@ -216,13 +221,6 @@ intersectRay(ray, &intersectPt, &normal, &lambda_min, &material_type, &refractio
 //          ray's colour.
 
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
-
-// draw the normal at the intersection point debugging
-  // struct point2D normalPt;
-  // normalPt.px = intersectPt.px + normal.px;
-  // normalPt.py = intersectPt.py + normal.py;
-  // renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
-  // This is for reflection
   if (material_type == 0) {
     struct ray2D refl_ray;
     refl_ray.p.px=intersectPt.px;
