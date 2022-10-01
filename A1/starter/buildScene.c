@@ -100,20 +100,17 @@ c.px=1.5;
 c.py=-1.5;
 //c.px=0;
 //c.py=0;
-addCirc(&c,.55,0,1.6);
-
+addCirc(&c,.55,2,1.6);
 c.px=.6;
 c.py=-.5;
 //c.px=0;
 //c.py=0;
-addCirc(&c,.25,0,2.47);
-
+addCirc(&c,.25,2,2.47);
 c.px=1.5;
 c.py=1.5;
 //c.px=0;
 //c.py=0;
-addCirc(&c,.55,0,1.6);
-
+addCirc(&c,.55,2,1.6);
 //p.px = 0.382109;
 //p.py = -0.377429;
 p.px=0.0;			// Set a light source at the origin, pointing in direction
@@ -124,7 +121,7 @@ normalize(&d);			// you can test your code for mirror-reflecting rays
 l.p=p;
 l.d=d;
 lightsource.l=l;
-lightsource.light_type=0;	// Change this to set the light source type to point or laser 
+lightsource.light_type=1;	// Change this to set the light source type to point or laser 
 lightsource.R=1.0;		// Lightsource colour in RGB space. All values must be in [0,1]
 lightsource.G=1.0;		// and (1,1,1) is white
 lightsource.B=1.0;
