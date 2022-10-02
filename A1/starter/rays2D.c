@@ -25,7 +25,7 @@
  * Uncomment the #define below to enable debug code, add whatever you need
  * to help you debug your program between #ifdef - #endif blocks
  * ************************************************************************/
-#define __DEBUG_MODE
+// #define __DEBUG_MODE
 
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
@@ -85,7 +85,6 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
-printf("light source random direction\n");
 double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=cos(rand_ang);
 ray.d.py=sin(rand_ang);
@@ -437,25 +436,29 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     } else {
         continue;
     }
-    printf("lambda: %f\n", temp);
     // check if lambda is positive and smaller than current lambda
-    if (temp > 0.001 && temp < *lambda) {
+    if (temp > 0.0 && temp < *lambda) {
+      p->px = ray->p.px;  // make sure the ray doesn't intersect the wall as we have a smaller lambda.
+      p->py = ray->p.py;
+      if (temp > 0.001) {
+        // update lambda
         *lambda = temp;
         // update intersection point
         p->px = ray->p.px + temp * ray->d.px;
         p->py = ray->p.py + temp * ray->d.py;
-        // update normal
-        n->px = p->px - c->c.px;
-        n->py = p->py - c->c.py;
-        if (ray->inside_out) {
-            n->px = -n->px;
-            n->py = -n->py;
-        }
-        normalize(n);
+      }
+      if (ray->inside_out) {
+        n->px = -n->px;
+        n->py = -n->py;
+      }  
+      // update normal
+      n->px = p->px - c->c.px;
+      n->py = p->py - c->c.py;
+      normalize(n);
         // update material type
-        *type = c->material_type;
+      *type = c->material_type;
         // update index of refraction
-        *r_idx = c->r_idx;
+      *r_idx = c->r_idx;
     }
 }
 }
