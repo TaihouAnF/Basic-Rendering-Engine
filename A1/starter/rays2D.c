@@ -196,125 +196,111 @@ for (int i = 0; i < 4; i++) {
 }
 
 
-// Step 1 - Find *closest* intersection with the 4 walls (the written part of A1
-//          should help you figure out how to do that.
-
-// How many walls can the ray intersect? how many walls can the ray intersect in the
-// forward direction?
-
-// Step 2 - Check for intersection against objects in the object array - you must
-//          complete the intersectRay() function, call it, and obtain the closest
-//          intersection (in the forward ray direction) with objects in the scene.
-//          Note that you must provide variables for intersectRay() to return
-//          the point of intersection, normal at intersection, lambda, material type,
-//          and refraction index for the closest object hit by the ray.
-
 intersectRay(ray, &intersectPt, &normal, &lambda_min, &material_type, &refraction_index);
-// Step 4 - Render the ray onto the image. Use renderRay(). Provide renderRay() with
-//          the origin of the ray, and the intersection point (it will then draw a
-//          ray from the origin to the intersection). You also need to provide the
-//          ray's colour.
-
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
+printf("lambda_min: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
+printf("ray heading in direction %f %f\n", ray->d.px, ray->d.py);
+struct point2D normalPt;
+normalPt.px = intersectPt.px + normal.px;
+normalPt.py = intersectPt.py + normal.py;
+renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
 
-// draw the normal at the intersection point debugging
-  // struct point2D normalPt;
-  // normalPt.px = intersectPt.px + normal.px;
-  // normalPt.py = intersectPt.py + normal.py;
-  // renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
-  // This is for reflection
-  if (material_type == 0) {
-    struct ray2D refl_ray;
-    refl_ray.p.px=intersectPt.px;
-    refl_ray.p.py=intersectPt.py;
-    refl_ray.R=ray->R;
-    refl_ray.G=ray->G;
-    refl_ray.B=ray->B;
-    refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
-    refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
-    refl_ray.inside_out=ray->inside_out;
-    refl_ray.H=ray->H;
-    refl_ray.monochromatic=ray->monochromatic;
-    propagateRay(&refl_ray, depth+1);
-  } else if (material_type == 1) {
-    double rand_an = (drand48()-0.5)*PI;
-    struct ray2D scat_ray;
-    scat_ray.p.px=intersectPt.px;
-    scat_ray.p.py=intersectPt.py;
-    scat_ray.d.px=normal.px*cos(rand_an) - normal.py*sin(rand_an);
-    scat_ray.d.py=normal.px*sin(rand_an) + normal.py*cos(rand_an);
-    scat_ray.R=ray->R;
-    scat_ray.G=ray->G;
-    scat_ray.B=ray->B;
-    scat_ray.H=ray->H;
-    scat_ray.inside_out=ray->inside_out;
-    scat_ray.monochromatic=ray->monochromatic;
-    propagateRay(&scat_ray, depth+1);
-  } else if(material_type == 2) {
-    // make two rays one reflected 
-    struct ray2D refl_ray;
-    // the other is transmitted
-    struct ray2D transmitted_ray;
-    // compute the schlick approximation
-    double n1;
-    double n2;
-    // outside -> inside
-    if (ray->inside_out == 0) {
-      n1 = 1;
-      n2 = refraction_index; 
-    } else if (ray->inside_out == 1) {
-    // inside -> outside
-      n1 = refraction_index;
-      n2 = 1;
-    }
-    struct point2D re_dir;
-    re_dir.px = -ray->d.px;
-    re_dir.py = -ray->d.py;
-    // angle between the ray and normal (angle of incident)
-    double ang_inc = dot(&re_dir, &normal) / (sqrt(dot(&re_dir, &re_dir)) * sqrt(dot(&normal, &normal)));;
-    // check theta less than 90
-    if (ang_inc * 180 / PI > 90) {
-      printf("angle of incident over 90 degrees %f\n", ang_inc * 180 / PI);
-    }
-    double R0 = pow((n1 - n2) / (n1 + n2), 2);
-    // strength of the reflected light
-    double Rs =  R0 + ((1-R0) * pow(1 - cos(ang_inc), 5));
-    // strength of the transmitted light
-    double Rt = 1 - Rs;
-    // reflected ray
-    printf("R0: %f Rs: %f ang_inc: %f\n", R0, Rs, ang_inc);
-    refl_ray.p.px=intersectPt.px;
-    refl_ray.p.py=intersectPt.py;
-    refl_ray.R=Rs * ray->R;
-    refl_ray.G=Rs * ray->G;
-    refl_ray.B=Rs * ray->B;
-    refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
-    refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
-    refl_ray.inside_out= ray->inside_out;
-    refl_ray.H=ray->H;
-    refl_ray.monochromatic=ray->monochromatic;
-    // transmitted ray
-    transmitted_ray.p.px=intersectPt.px;
-    transmitted_ray.p.py=intersectPt.py;
-    transmitted_ray.R=Rt * ray->R;
-    transmitted_ray.G=Rt * ray->G;
-    transmitted_ray.B=Rt * ray->B;
-    // find the angle of refraction
-    double ang_ref = asin(n1/n2 * sin(ang_inc));
-    if (ang_ref * 180 / PI > 90) {
-      printf("angle of refraction over 90 degrees %f\n", ang_inc);
-    }
-    //transmitted ray direction
-    transmitted_ray.d.px = cos(ang_inc);
-    transmitted_ray.d.py = sin(ang_inc);
-    // inside out will always switch going from one medium to another
-    transmitted_ray.inside_out= !ray->inside_out;
-    transmitted_ray.H=ray->H;
-    transmitted_ray.monochromatic=ray->monochromatic; 
-    //propagate the rays
-    propagateRay(&refl_ray, depth+1);
-    propagateRay(&transmitted_ray, depth+1);
+if (material_type == 0) {
+  struct ray2D refl_ray;
+  refl_ray.p.px=intersectPt.px;
+  refl_ray.p.py=intersectPt.py;
+  refl_ray.R=ray->R;
+  refl_ray.G=ray->G;
+  refl_ray.B=ray->B;
+  refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
+  refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
+  refl_ray.inside_out=ray->inside_out;
+  refl_ray.H=ray->H;
+  refl_ray.monochromatic=ray->monochromatic;
+  propagateRay(&refl_ray, depth+1);
+} else if (material_type == 1) {
+  double rand_an = (drand48()-0.5)*PI;
+  struct ray2D scat_ray;
+  scat_ray.p.px=intersectPt.px;
+  scat_ray.p.py=intersectPt.py;
+  scat_ray.d.px=normal.px*cos(rand_an) - normal.py*sin(rand_an);
+  scat_ray.d.py=normal.px*sin(rand_an) + normal.py*cos(rand_an);
+  scat_ray.R=ray->R;
+  scat_ray.G=ray->G;
+  scat_ray.B=ray->B;
+  scat_ray.H=ray->H;
+  scat_ray.inside_out=ray->inside_out;
+  scat_ray.monochromatic=ray->monochromatic;
+  propagateRay(&scat_ray, depth+1);
+} else if(material_type == 2) {
+  // make two rays one reflected 
+  struct ray2D refl_ray;
+  // the other is transmitted
+  struct ray2D transmitted_ray;
+  // compute the schlick approximation
+  double n1;
+  double n2;
+  // outside -> inside
+  if (ray->inside_out == 0) {
+    n1 = 1;
+    n2 = refraction_index; 
+  } else if (ray->inside_out == 1) {
+  // inside -> outside
+    n1 = refraction_index;
+    n2 = 1;
   }
+  struct point2D re_dir;
+  re_dir.px = -ray->d.px;
+  re_dir.py = -ray->d.py;
+  // angle between the ray and normal (angle of incident)
+  double ang_inc = dot(&re_dir, &normal) / (sqrt(dot(&re_dir, &re_dir)) * sqrt(dot(&normal, &normal)));
+  // check theta less than 90
+  if (ang_inc * 180 / PI > 90) {
+    printf("angle of incident over 90 degrees %f\n", ang_inc * 180 / PI);
+  }
+  double R0 = pow((n1 - n2) / (n1 + n2), 2);
+  // strength of the reflected light
+  double Rs =  R0 + ((1-R0) * pow(1 - cos(ang_inc), 5));
+  // strength of the transmitted light
+  double Rt = 1 - Rs;
+  // reflected ray
+  refl_ray.p.px=intersectPt.px;
+  refl_ray.p.py=intersectPt.py;
+  refl_ray.R=Rs * ray->R;
+  refl_ray.G=Rs * ray->G;
+  refl_ray.B=Rs * ray->B;
+  refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
+  refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
+  refl_ray.inside_out= ray->inside_out;
+  refl_ray.H=ray->H;
+  refl_ray.monochromatic=ray->monochromatic;
+  // transmitted ray
+  transmitted_ray.p.px=intersectPt.px;
+  transmitted_ray.p.py=intersectPt.py;
+  transmitted_ray.R=Rt * ray->R;
+  transmitted_ray.G=Rt * ray->G;
+  transmitted_ray.B=Rt * ray->B;
+  // find the angle of refraction
+  double n =  ray->inside_out == 0 ? n1 / n2 : n2 / n1;
+  double ang_ref =  ray->inside_out == 0 ? asin(n * sin(ang_inc)) : -asin(n * sin(ang_inc));
+  if (ang_ref * 180 / PI > 90) {
+    printf("angle of refraction over 90 degrees %f\n", ang_inc);
+  }
+  //transmitted ray direction
+  struct point2D ref_norm = {-normal.px, -normal.py};
+  printf("ref_norm: %f %f ang_ref: %f\n", ref_norm.px, ref_norm.py, ang_ref);
+  transmitted_ray.d.px = ref_norm.px*cos(ang_ref) - ref_norm.py*sin(ang_ref);
+  transmitted_ray.d.py = ref_norm.px*sin(ang_ref) + ref_norm.py*cos(ang_ref);
+  double test = dot(&transmitted_ray.d, &ref_norm) / (sqrt(dot(&ref_norm, &ref_norm)) * sqrt(dot(&transmitted_ray.d, &transmitted_ray.d)));
+  // inside out will always switch going from one medium to another
+  printf("angle between normal and transmitted ray %f\n", test * 180 / PI);
+  transmitted_ray.inside_out= !ray->inside_out;
+  transmitted_ray.H=ray->H;
+  transmitted_ray.monochromatic=ray->monochromatic; 
+  //propagate the rays
+  //propagateRay(&refl_ray, depth+1);
+  propagateRay(&transmitted_ray, depth+1);
+}
 
 
 
@@ -413,8 +399,6 @@ void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, doubl
   *        intersection that will be needed to determine how to bounce/refract the
   *	   ray.
   * *******************************************************************************/
- 
- // Step 1: loop over all objects
 for (int i = 0; i < MAX_OBJECTS; i++) {
     struct circ2D* c = &objects[i];
     if (c->r ==  -1) {
@@ -440,6 +424,11 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         // update normal
         n->px = p->px - c->c.px;
         n->py = p->py - c->c.py;
+        // invert the normal if its going from inside the object to outside
+        if (ray->inside_out) {
+            n->px = -n->px;
+            n->py = -n->py;
+        }
         normalize(n);
         // update material type
         *type = c->material_type;
@@ -455,6 +444,10 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         // update normal
         n->px = p->px - c->c.px;
         n->py = p->py - c->c.py;
+        if (ray->inside_out) {
+            n->px = -n->px;
+            n->py = -n->py;
+        }
         normalize(n);
         // update material type
         *type = c->material_type;
