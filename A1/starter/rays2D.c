@@ -431,6 +431,8 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     double temp = (lambda1 <= lambda2) ? lambda1 : lambda2;
     // check if lambda is positive and smaller than current lambda
     if (temp > 0.0 && temp < *lambda) {
+      p->px = ray->p.px;  // make sure the ray doesn't intersect the wall as we have a smaller lambda.
+      p->py = ray->p.py;
         
         if (temp > 0.001) {
           // update lambda
@@ -440,14 +442,14 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
           p->py = ray->p.py + temp * ray->d.py;
         }
         
-        // update normal
-        n->px = p->px - c->c.px;
-        n->py = p->py - c->c.py;
-        normalize(n);
+      // update normal
+      n->px = p->px - c->c.px;
+      n->py = p->py - c->c.py;
+      normalize(n);
         // update material type
-        *type = c->material_type;
+      *type = c->material_type;
         // update index of refraction
-        *r_idx = c->r_idx;
+      *r_idx = c->r_idx;
     }
 }
 }
