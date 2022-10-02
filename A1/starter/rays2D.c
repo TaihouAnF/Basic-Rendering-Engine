@@ -428,28 +428,18 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     }
     double lambda1 = (-B + sqrt(discrim)) / (2 * A);
     double lambda2 = (-B - sqrt(discrim)) / (2 * A);
+    double temp = (lambda1 <= lambda2) ? lambda1 : lambda2;
     // check if lambda is positive and smaller than current lambda
-    if (lambda1 > 0.001 && lambda1 < *lambda) {
-        // update lambda
-        *lambda = lambda1;
-        // update intersection point
-        p->px = ray->p.px + lambda1 * ray->d.px;
-        p->py = ray->p.py + lambda1 * ray->d.py;
-        // update normal
-        n->px = p->px - c->c.px;
-        n->py = p->py - c->c.py;
-        normalize(n);
-        // update material type
-        *type = c->material_type;
-        // update index of refraction
-        *r_idx = c->r_idx;
-    }
-    if (lambda2 > 0.001 && lambda2 < *lambda) {
-        // update lambda
-        *lambda = lambda2;
-        // update intersection point
-        p->px = ray->p.px + lambda2 * ray->d.px;
-        p->py = ray->p.py + lambda2 * ray->d.py;
+    if (temp > 0.0 && temp < *lambda) {
+        
+        if (temp > 0.001) {
+          // update lambda
+          *lambda = temp;
+          // update intersection point
+          p->px = ray->p.px + temp * ray->d.px;
+          p->py = ray->p.py + temp * ray->d.py;
+        }
+        
         // update normal
         n->px = p->px - c->c.px;
         n->py = p->py - c->c.py;
