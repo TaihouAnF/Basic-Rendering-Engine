@@ -90,34 +90,32 @@ void buildWalls(void)
  walls[3].material_type=0;
 }
 
-void buildScene(void)
-{
- struct point2D c,p,d;
- struct ray2D l;
+void buildScene(void) {
+  struct point2D c,p,d;
+  struct ray2D l;
 
- // Two spheres and one lightsource
-c.px=1.5;
-c.py=-1.5;
-//c.px=0;
-//c.py=0;
-addCirc(&c,.55,2,1.6);
-c.px=.6;
-c.py=-.5;
-//c.px=0;
-//c.py=0;
-addCirc(&c,.25,2,2.47);
-//p.px = 0.382109;
-//p.py = -0.377429;
-p.px=0.0;			// Set a light source at the origin, pointing in direction
-p.py=0.0;			// (1.0, -.8)  (remember that Y increases downward!)
-d.px=1.0;			// This ray should hit both spheres, so you can test your
-d.py=-.8;			// intersection code. The closest sphere is reflecting, so
-normalize(&d);			// you can test your code for mirror-reflecting rays
-l.p=p;
-l.d=d;
-lightsource.l=l;
-lightsource.light_type=0;	// Change this to set the light source type to point or laser 
-lightsource.R=1.0;		// Lightsource colour in RGB space. All values must be in [0,1]
-lightsource.G=1.0;		// and (1,1,1) is white
-lightsource.B=1.0;
+  c.px=0.5400;
+  c.py=-1.0267;
+  addCirc(&c,0.6667,2,1.6);
+
+  c.px=-1.1040;
+  c.py=-0.6083;
+  addCirc(&c,0.7583,2,1.6);
+
+  c.px=0.9960;
+  c.py=0.7717;
+  addCirc(&c,0.6328,2,1.6);
+
+  p.px=-0.7733;
+  p.py=1.2933;
+  d.px=0.4720;
+  d.py=-0.8816;
+  normalize(&d);
+  l.p=p;
+  l.d=d;
+  lightsource.l=l;
+  lightsource.light_type=0;
+  lightsource.R=1.0;
+  lightsource.G=1.0;
+  lightsource.B=1.0;
 }

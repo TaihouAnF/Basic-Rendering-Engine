@@ -25,7 +25,7 @@
  * Uncomment the #define below to enable debug code, add whatever you need
  * to help you debug your program between #ifdef - #endif blocks
  * ************************************************************************/
-// #define __DEBUG_MODE
+#define __DEBUG_MODE
 
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
@@ -89,14 +89,12 @@ double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0
 ray.d.px=cos(rand_ang);
 ray.d.py=sin(rand_ang);
 }
-
- ray.inside_out=0;		// Initially 0 since the ray starts outside an object
- ray.monochromatic=0;		// Initially 0 since the ray is white (from lightsource)
- ray.R=lightsource.R;			// Ray colour in RGB must be the same as the lightsource
- ray.G=lightsource.G;
- ray.B=lightsource.B;
- 
- return(ray);			// Currently this returns dummy ray(old), now it should return correct ray
+ray.inside_out=0;		// Initially 0 since the ray starts outside an object
+ray.monochromatic=0;		// Initially 0 since the ray is white (from lightsource)
+ray.R=lightsource.R;			// Ray colour in RGB must be the same as the lightsource
+ray.G=lightsource.G;
+ray.B=lightsource.B;
+return(ray);			// Currently this returns dummy ray(old), now it should return correct ray
 }
 
 void propagateRay(struct ray2D *ray, int depth)
@@ -148,8 +146,13 @@ intersectPt.px=ray->p.px;
 intersectPt.py=ray->p.py;
 
 if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
-printf("Ray is at (%f %f), direction (%f %f) with RGB value (%f %f %f)\n",ray->p.px,ray->p.py, ray->d.px, ray->d.py, ray->R,ray->G,ray->B);
-printf("inside_out: %d\n",ray->inside_out);
+if (ray->R <= 0.001 && ray->G <= 0.001 && ray->B <= 0.001) return;	// don't propagate a ray that has no colour
+
+#ifdef __DEBUG_MODE
+printf("Ray R: %f, G: %f, B: %f\n", ray->R, ray->G, ray->B);
+printf("inside out %d\n", ray->inside_out);
+#endif
+
 // recurse forever
 for (int i = 0; i < 4; i++) {
   if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
@@ -205,9 +208,11 @@ intersectRay(ray, &intersectPt, &normal, &lambda_min, &material_type, &refractio
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
 // render the normal
 //struct point2D normalPt;
-//normalPt.px = intersectPt.px + normal.px;
-//normalPt.py = intersectPt.py + normal.py;
-//renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
+if (ray->inside_out) {  
+  normal.px = -normal.px;
+  normal.py = -normal.py;  
+}
+
 if (material_type == 0) {
   struct ray2D refl_ray;
   refl_ray.p.px=intersectPt.px;
@@ -236,9 +241,9 @@ if (material_type == 0) {
   scat_ray.monochromatic=ray->monochromatic;
   propagateRay(&scat_ray, depth+1);
 } else if(material_type == 2) {
-  printf("material 2\n");
+  struct point2D ref_norm = {-normal.px, -normal.py};
    // make two rays one reflected 
-  struct ray2D refl_ray;  
+  struct ray2D refl_ray;
   // compute the schlick approximation
   double n1;
   double n2;
@@ -303,10 +308,9 @@ if (material_type == 0) {
     printf("angle of refraction over 90 degrees %f\n", ang_inc);
   }
   //transmitted ray direction
-  struct point2D ref_norm = {-normal.px, -normal.py};
   transmitted_ray.d.px = ref_norm.px*cos(ang_ref) - ref_norm.py*sin(ang_ref);
   transmitted_ray.d.py = ref_norm.px*sin(ang_ref) + ref_norm.py*cos(ang_ref);
-  transmitted_ray.inside_out= !ray->inside_out;
+  transmitted_ray.inside_out= (ray->inside_out == 0) ? 1 : 0;
   transmitted_ray.H=ray->H;
   transmitted_ray.monochromatic=ray->monochromatic; 
   //propagate the rays
@@ -447,10 +451,6 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
         p->px = ray->p.px + temp * ray->d.px;
         p->py = ray->p.py + temp * ray->d.py;
       }
-      if (ray->inside_out) {
-        n->px = -n->px;
-        n->py = -n->py;
-      }  
       // update normal
       n->px = p->px - c->c.px;
       n->py = p->py - c->c.py;
