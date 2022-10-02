@@ -242,11 +242,14 @@ if (material_type == 0) {
   propagateRay(&scat_ray, depth+1);
 } else if(material_type == 2) {
   struct point2D ref_norm = {-normal.px, -normal.py};
-   // make two rays one reflected 
+  struct point2D re_dir;
   struct ray2D refl_ray;
+  struct ray2D transmitted_ray;
   // compute the schlick approximation
   double n1;
   double n2;
+  re_dir.px = -ray->d.px;
+  re_dir.py = -ray->d.py;
   // outside -> inside
   if (ray->inside_out == 0) {
     n1 = 1;
@@ -256,29 +259,14 @@ if (material_type == 0) {
     n1 = refraction_index;
     n2 = 1;
   }
-  struct point2D re_dir;
-  re_dir.px = -ray->d.px;
-  re_dir.py = -ray->d.py;
   // angle between the ray and normal (angle of incident)
   double ang_inc = acos(dot(&re_dir, &normal));
   // check theta less than 90
-  if (ang_inc * 180 / PI > 90) {
-    printf("angle of incident over 90 degrees %f\n", ang_inc * 180 / PI);
-  }
   double R0 = pow((n1 - n2) / (n1 + n2), 2);
   // strength of the reflected light
   double Rs =  R0 + ((1-R0) * pow(1 - cos(ang_inc), 5));
   // strength of the transmitted light
   double Rt = 1 - Rs;
-  if (R0 > 1 || R0 < 0) {
-    printf("R0 error: %f\n", R0);
-  }
-  if (Rs > 1 || Rs < 0){
-    printf("Rs error: %f\n", Rs);
-  }
-  if (Rt > 1 || Rt < 0){
-    printf("Rt error: %f\n", Rt);
-  }
   // reflected ray
   refl_ray.p.px=intersectPt.px;
   refl_ray.p.py=intersectPt.py;
@@ -290,9 +278,7 @@ if (material_type == 0) {
   refl_ray.inside_out= ray->inside_out;
   refl_ray.H=ray->H;
   refl_ray.monochromatic=ray->monochromatic;
-  propagateRay(&refl_ray, depth+1);
   // the other is transmitted
-  struct ray2D transmitted_ray;
   // transmitted ray
   transmitted_ray.p.px=intersectPt.px;
   transmitted_ray.p.py=intersectPt.py;
@@ -303,10 +289,6 @@ if (material_type == 0) {
   double n =  ray->inside_out == 0 ? n1 / n2 : n2 / n1;
   double ang_ref = asin(n * sin(ang_inc));
   ang_ref =  ray->inside_out == 0 ? ang_ref : -ang_ref;
-  printf("ang_ref: %f\n", ang_ref * 180 / PI);
-  if (ang_ref * 180 / PI > 90) {
-    printf("angle of refraction over 90 degrees %f\n", ang_inc);
-  }
   //transmitted ray direction
   transmitted_ray.d.px = ref_norm.px*cos(ang_ref) - ref_norm.py*sin(ang_ref);
   transmitted_ray.d.py = ref_norm.px*sin(ang_ref) + ref_norm.py*cos(ang_ref);
@@ -314,6 +296,7 @@ if (material_type == 0) {
   transmitted_ray.H=ray->H;
   transmitted_ray.monochromatic=ray->monochromatic; 
   //propagate the rays
+  propagateRay(&refl_ray, depth+1);
   propagateRay(&transmitted_ray, depth+1);
 }
 }
