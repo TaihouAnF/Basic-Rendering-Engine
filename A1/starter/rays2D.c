@@ -25,7 +25,7 @@
  * Uncomment the #define below to enable debug code, add whatever you need
  * to help you debug your program between #ifdef - #endif blocks
  * ************************************************************************/
-#define __DEBUG_MODE
+// #define __DEBUG_MODE
 
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
