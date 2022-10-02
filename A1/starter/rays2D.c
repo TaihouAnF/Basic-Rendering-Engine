@@ -85,6 +85,7 @@ if (lightsource.light_type) {    // Ray's direction: if laser, then we set direc
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
 ray.d.py=lightsource.l.d.py;
 } else {
+printf("light source random direction\n");
 double rand_ang=drand48()*2*PI;   // Using rand()/RAND_MAX to get number from [0, 1].
 ray.d.px=cos(rand_ang);
 ray.d.py=sin(rand_ang);
@@ -144,10 +145,13 @@ struct point2D normal;
 int material_type = 0;
 double refraction_index = 0.0;
 double lambda_min = 0.0;
+intersectPt.px=ray->p.px;
+intersectPt.py=ray->p.py;
 
 if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
-					// recurse forever
-
+printf("Ray is at (%f %f), direction (%f %f) with RGB value (%f %f %f)\n",ray->p.px,ray->p.py, ray->d.px, ray->d.py, ray->R,ray->G,ray->B);
+printf("inside_out: %d\n",ray->inside_out);
+// recurse forever
 for (int i = 0; i < 4; i++) {
   if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
     if (ray->d.py != 0) {
@@ -156,17 +160,18 @@ for (int i = 0; i < 4; i++) {
       temp_normal_wall.px = -walls[i].w.d.py;
       temp_normal_wall.py = walls[i].w.d.px;
 
-      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda < lambda_min && lambda > 0.01)) {
-        lambda_min = lambda;  // only update when it is less than the current lambda_min
+      if ((lambda_min == 0.0 && lambda > 0.0) || (lambda < lambda_min && lambda > 0.0)) {
+        if (lambda > 0.01 && ray->p.px + lambda*ray->d.px <= W_RIGHT && ray->p.px + lambda*ray->d.px >= W_LEFT) {
+          lambda_min = lambda;  // only update when it is less than the current lambda_min, and ignore those tiny value, if all true, we update the intersectiPt
+          intersectPt.px = ray->p.px + lambda_min*ray->d.px;
+          intersectPt.py = ray->p.py + lambda_min*ray->d.py;
+        }
         
-        intersectPt.px = ray->p.px + lambda_min*ray->d.px;
-        intersectPt.py = ray->p.py + lambda_min*ray->d.py;
-        // printf("y lambda: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
-
-        normal.px = temp_normal_wall.px;
-        normal.py = temp_normal_wall.py;
-
-        normalize(&normal);
+        if (ray->p.px + lambda*ray->d.px <= W_RIGHT && ray->p.px + lambda*ray->d.px >= W_LEFT) { // Only update normal when intersect is not out of bound
+          normal.px = temp_normal_wall.px;
+          normal.py = temp_normal_wall.py;
+          normalize(&normal);
+        }
 
         material_type = walls[i].material_type;
       }
@@ -177,17 +182,19 @@ for (int i = 0; i < 4; i++) {
       struct point2D temp_normal_wall;
       temp_normal_wall.px = -walls[i].w.d.py;
       temp_normal_wall.py = walls[i].w.d.px;
-      if ((lambda_min == 0.0 && lambda > 0.01) || (lambda < lambda_min && lambda > 0.01)) {
-        lambda_min = lambda;  // only update when it is less than the current lambda_min
 
-        intersectPt.px = ray->p.px + lambda_min*ray->d.px;
-        intersectPt.py = ray->p.py + lambda_min*ray->d.py;
-        // printf("x lambda: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
+      if ((lambda_min == 0.0 && lambda > 0.0) || (lambda < lambda_min && lambda > 0.0)) {
+        if (lambda > 0.01 && ray->p.py + lambda*ray->d.py <= W_BOTTOM && ray->p.py + lambda*ray->d.py >= W_TOP) {
+          lambda_min = lambda;  // only update when it is less than the current lambda_min and same as above.
+          intersectPt.px = ray->p.px + lambda_min*ray->d.px;
+          intersectPt.py = ray->p.py + lambda_min*ray->d.py;
+        }
 
-        normal.px = temp_normal_wall.px;
-        normal.py = temp_normal_wall.py;
-
-        normalize(&normal);
+        if (ray->p.py + lambda*ray->d.py <= W_BOTTOM && ray->p.py + lambda*ray->d.py >= W_TOP) {
+          normal.px = temp_normal_wall.px;
+          normal.py = temp_normal_wall.py;
+          normalize(&normal);
+        }  
 
         material_type = walls[i].material_type;
       }
@@ -195,16 +202,13 @@ for (int i = 0; i < 4; i++) {
   }
 }
 
-
 intersectRay(ray, &intersectPt, &normal, &lambda_min, &material_type, &refraction_index);
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
-printf("lambda_min: %f and intersection point: %f %f\n", lambda_min, intersectPt.px, intersectPt.py);
-printf("ray heading in direction %f %f\n", ray->d.px, ray->d.py);
-struct point2D normalPt;
-normalPt.px = intersectPt.px + normal.px;
-normalPt.py = intersectPt.py + normal.py;
-renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
-
+// render the normal
+//struct point2D normalPt;
+//normalPt.px = intersectPt.px + normal.px;
+//normalPt.py = intersectPt.py + normal.py;
+//renderRay(&intersectPt, &normalPt, 1.0, 0.0, 0.0);
 if (material_type == 0) {
   struct ray2D refl_ray;
   refl_ray.p.px=intersectPt.px;
@@ -233,10 +237,9 @@ if (material_type == 0) {
   scat_ray.monochromatic=ray->monochromatic;
   propagateRay(&scat_ray, depth+1);
 } else if(material_type == 2) {
-  // make two rays one reflected 
-  struct ray2D refl_ray;
-  // the other is transmitted
-  struct ray2D transmitted_ray;
+  printf("material 2\n");
+   // make two rays one reflected 
+  struct ray2D refl_ray;  
   // compute the schlick approximation
   double n1;
   double n2;
@@ -253,7 +256,7 @@ if (material_type == 0) {
   re_dir.px = -ray->d.px;
   re_dir.py = -ray->d.py;
   // angle between the ray and normal (angle of incident)
-  double ang_inc = dot(&re_dir, &normal) / (sqrt(dot(&re_dir, &re_dir)) * sqrt(dot(&normal, &normal)));
+  double ang_inc = acos(dot(&re_dir, &normal));
   // check theta less than 90
   if (ang_inc * 180 / PI > 90) {
     printf("angle of incident over 90 degrees %f\n", ang_inc * 180 / PI);
@@ -263,47 +266,57 @@ if (material_type == 0) {
   double Rs =  R0 + ((1-R0) * pow(1 - cos(ang_inc), 5));
   // strength of the transmitted light
   double Rt = 1 - Rs;
+  if (R0 > 1 || R0 < 0) {
+    printf("R0 error: %f\n", R0);
+  }
+  if (Rs > 1 || Rs < 0){
+    printf("Rs error: %f\n", Rs);
+  }
+  if (Rt > 1 || Rt < 0){
+    printf("Rt error: %f\n", Rt);
+  }
   // reflected ray
   refl_ray.p.px=intersectPt.px;
   refl_ray.p.py=intersectPt.py;
-  refl_ray.R=Rs * ray->R;
-  refl_ray.G=Rs * ray->G;
-  refl_ray.B=Rs * ray->B;
+  refl_ray.R= Rs * ray->R;
+  refl_ray.G= Rs * ray->G;
+  refl_ray.B= Rs * ray->B;
   refl_ray.d.px=-2*dot(&normal, &ray->d)*normal.px+ray->d.px;
   refl_ray.d.py=-2*dot(&normal, &ray->d)*normal.py+ray->d.py;
   refl_ray.inside_out= ray->inside_out;
   refl_ray.H=ray->H;
   refl_ray.monochromatic=ray->monochromatic;
+  propagateRay(&refl_ray, depth+1);
+  // the other is transmitted
+  struct ray2D transmitted_ray;
   // transmitted ray
   transmitted_ray.p.px=intersectPt.px;
   transmitted_ray.p.py=intersectPt.py;
-  transmitted_ray.R=Rt * ray->R;
-  transmitted_ray.G=Rt * ray->G;
-  transmitted_ray.B=Rt * ray->B;
+  transmitted_ray.R= Rt * ray->R;
+  transmitted_ray.G= Rt * ray->G;
+  transmitted_ray.B= Rt * ray->B;
   // find the angle of refraction
   double n =  ray->inside_out == 0 ? n1 / n2 : n2 / n1;
-  double ang_ref =  ray->inside_out == 0 ? asin(n * sin(ang_inc)) : -asin(n * sin(ang_inc));
+  double ang_ref = asin(n * sin(ang_inc));
+  ang_ref =  ray->inside_out == 0 ? ang_ref : -ang_ref;
+  printf("ang_ref: %f\n", ang_ref * 180 / PI);
   if (ang_ref * 180 / PI > 90) {
     printf("angle of refraction over 90 degrees %f\n", ang_inc);
   }
   //transmitted ray direction
   struct point2D ref_norm = {-normal.px, -normal.py};
-  printf("ref_norm: %f %f ang_ref: %f\n", ref_norm.px, ref_norm.py, ang_ref);
   transmitted_ray.d.px = ref_norm.px*cos(ang_ref) - ref_norm.py*sin(ang_ref);
   transmitted_ray.d.py = ref_norm.px*sin(ang_ref) + ref_norm.py*cos(ang_ref);
-  double test = dot(&transmitted_ray.d, &ref_norm) / (sqrt(dot(&ref_norm, &ref_norm)) * sqrt(dot(&transmitted_ray.d, &transmitted_ray.d)));
-  // inside out will always switch going from one medium to another
-  printf("angle between normal and transmitted ray %f\n", test * 180 / PI);
   transmitted_ray.inside_out= !ray->inside_out;
   transmitted_ray.H=ray->H;
   transmitted_ray.monochromatic=ray->monochromatic; 
   //propagate the rays
-  //propagateRay(&refl_ray, depth+1);
   propagateRay(&transmitted_ray, depth+1);
+}
 }
 
 
-
+//gdb --args ./light2D 1024 1024 1 4
 
 // Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
 //          to provide code for 3 cases:
@@ -345,7 +358,7 @@ if (material_type == 0) {
 //				     transmitted ray is the same as the incoming ray but
 //			             modulated by Rt. Trace this ray.
  //	That's it! you're done!
-}
+
 
 void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, double *lambda, int *type, double *r_idx)
 {
@@ -414,33 +427,23 @@ for (int i = 0; i < MAX_OBJECTS; i++) {
     }
     double lambda1 = (-B + sqrt(discrim)) / (2 * A);
     double lambda2 = (-B - sqrt(discrim)) / (2 * A);
-    // check if lambda is positive and smaller than current lambda
-    if (lambda1 > 0.001 && lambda1 < *lambda) {
-        // update lambda
-        *lambda = lambda1;
-        // update intersection point
-        p->px = ray->p.px + lambda1 * ray->d.px;
-        p->py = ray->p.py + lambda1 * ray->d.py;
-        // update normal
-        n->px = p->px - c->c.px;
-        n->py = p->py - c->c.py;
-        // invert the normal if its going from inside the object to outside
-        if (ray->inside_out) {
-            n->px = -n->px;
-            n->py = -n->py;
-        }
-        normalize(n);
-        // update material type
-        *type = c->material_type;
-        // update index of refraction
-        *r_idx = c->r_idx;
+    double temp;
+    if (lambda1 > 0.001 && lambda2 > 0.001) {
+        temp = (lambda1 <= lambda2) ? lambda1 : lambda2;
+    } else if (lambda1 > 0.001) {
+        temp = lambda1;
+    } else if (lambda2 > 0.001) {
+        temp = lambda2;
+    } else {
+        continue;
     }
-    if (lambda2 > 0.001 && lambda2 < *lambda) {
-        // update lambda
-        *lambda = lambda2;
+    printf("lambda: %f\n", temp);
+    // check if lambda is positive and smaller than current lambda
+    if (temp > 0.001 && temp < *lambda) {
+        *lambda = temp;
         // update intersection point
-        p->px = ray->p.px + lambda2 * ray->d.px;
-        p->py = ray->p.py + lambda2 * ray->d.py;
+        p->px = ray->p.px + temp * ray->d.px;
+        p->py = ray->p.py + temp * ray->d.py;
         // update normal
         n->px = p->px - c->c.px;
         n->py = p->py - c->c.py;
