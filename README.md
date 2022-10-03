@@ -1,3 +1,4 @@
-# CSCD18A1
-This is a repo for D18 A1
-- which it only contains starter code so far.
+# CSCD18Assignment
+This is a repo for D18 Assignment
+- Finished A1.
+- Waiting for A2
