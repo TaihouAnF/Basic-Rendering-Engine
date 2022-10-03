@@ -93,21 +93,26 @@ void buildWalls(void)
 void buildScene(void) {
   struct point2D c,p,d;
   struct ray2D l;
-
-  c.px=0.5400;
-  c.py=-1.0267;
-  addCirc(&c,0.6667,2,1.6);
-
-  c.px=-1.1040;
-  c.py=-0.6083;
-  addCirc(&c,0.7583,2,1.6);
-
-  c.px=0.9960;
-  c.py=0.7717;
-  addCirc(&c,0.6328,2,1.6);
-
-  p.px=-0.7733;
-  p.py=1.2933;
+  // make a circle full of circles
+  double radius = 1;
+  double radius2 = 1.5;
+  double mini_radius = 0.2;
+  double mini_radius2 = 0.25;
+  double increment = (2 * PI)/12;
+  int mattype = 0;
+  for (double i=0; i < 2*PI; i += increment) {
+    c.px = radius * cos(i);
+    c.py = radius * sin(i);
+    addCirc(&c, mini_radius, mattype, 2.74);
+  }
+  mattype = 2;
+  for (double i=0; i < 2*PI; i += increment) {
+    c.px = radius2 * cos(i);
+    c.py = radius2 * sin(i);
+    addCirc(&c, mini_radius2, mattype, 2.74);
+  }
+  p.px=0;
+  p.py=0;
   d.px=0.4720;
   d.py=-0.8816;
   normalize(&d);

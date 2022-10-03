@@ -25,7 +25,7 @@
  * Uncomment the #define below to enable debug code, add whatever you need
  * to help you debug your program between #ifdef - #endif blocks
  * ************************************************************************/
-#define __DEBUG_MODE
+//#define __DEBUG_MODE
 
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
@@ -70,16 +70,16 @@ struct ray2D makeLightSourceRay(void)
  *         lightsource for the light propagation process.
  ************************************************************************/
  
- struct ray2D ray = {0};
+struct ray2D ray = {0};
 
- // This creates a dummy ray (which won't go anywhere since the direction
- // vector d=[0 0]!. But it's here so you see which data values you have to
- // provide values for given the light source position, and type.  
- // ** REPLACE THE CODE BELOW with code that provides a valid ray that
- //    is consistent with the lightsource.
+// This creates a dummy ray (which won't go anywhere since the direction
+// vector d=[0 0]!. But it's here so you see which data values you have to
+// provide values for given the light source position, and type.  
+// ** REPLACE THE CODE BELOW with code that provides a valid ray that
+//    is consistent with the lightsource.
  
- ray.p.px=lightsource.l.p.px;			// Ray's origin(old)
- ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
+ray.p.px=lightsource.l.p.px;			// Ray's origin(old)
+ray.p.py=lightsource.l.p.py;     // Changed its origin to lightsource.location
 
 if (lightsource.light_type) {    // Ray's direction: if laser, then we set direction as lightsource;
 ray.d.px=lightsource.l.d.px;	// else, change direction to?
@@ -145,15 +145,11 @@ double lambda_min = 0.0;
 intersectPt.px=ray->p.px;
 intersectPt.py=ray->p.py;
 
-if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't
-if (ray->R <= 0.001 && ray->G <= 0.001 && ray->B <= 0.001) return;	// don't propagate a ray that has no colour
+if (depth>=max_depth) return;	 	// Leave this be, it makes sure you don't recurse forever
+if (ray->R <= 0.01 && ray->G <= 0.01 && ray->B <= 0.01) return;	// don't propagate a ray that has no colour
+if (isnan(ray->R) || isnan(ray->G) || isnan(ray->B)) return;	// weird shit happens sometimes, this is a hack to avoid it
 
-#ifdef __DEBUG_MODE
-printf("Ray R: %f, G: %f, B: %f\n", ray->R, ray->G, ray->B);
-printf("inside out %d\n", ray->inside_out);
-#endif
 
-// recurse forever
 for (int i = 0; i < 4; i++) {
   if (i == 0 || i == 2) { // down/up-horizontal walls, which y is fixed.
     if (ray->d.py != 0) {
@@ -206,8 +202,6 @@ for (int i = 0; i < 4; i++) {
 
 intersectRay(ray, &intersectPt, &normal, &lambda_min, &material_type, &refraction_index);
 renderRay(&ray->p, &intersectPt, ray->R, ray->G, ray->B);
-// render the normal
-//struct point2D normalPt;
 if (ray->inside_out) {  
   normal.px = -normal.px;
   normal.py = -normal.py;  
@@ -300,51 +294,6 @@ if (material_type == 0) {
   propagateRay(&transmitted_ray, depth+1);
 }
 }
-
-
-//gdb --args ./light2D 1024 1024 1 4
-
-// Step 5 - Decide how to handle the ray's bounce at the intersection. You will have
-//          to provide code for 3 cases:
-//          If material type = 0, you have a mirror-reflecting object. 
-//                                Create a ray in the mirror reflection direction,
-//                                with the same colour as the incoming ray, and
-//                                with origin at the intersection point.
-//                                Then call propagateRay() recursively to trace it.
-//          if material type = 1, you have a scattering surface. 
-//                                Choose a random direction within +- 90 degrees 
-//                                from the normal at the intersection. Create a
-//                                ray in this direction, with the same colour as
-//                                the incoming ray, and origin at the intersection,
-//                                then call propagateRay() recursively to trace it.
-//          if material type = 2, you have a refracting (transparent) material.
-// 				   Here you need to process two rays:
-//                                * First, determine how much of the incoming light is
-//                                  reflected and how much is transmitted, using 
-//				     Schlick's approximation:
-// 					 R0 = ((n1-n2)/(n1+n2))^2   
-// 					 R(theta)=R0+((1-R0)*(1-cos(theta))^5)
-//				     If the ray is travelling from air to the inside
-//                                  of an object, n1=1, n2=object's index of refraction.
-//                                  If the ray is travelling from inside an object
-//                                  back onto air, n1=object's index of refraction, n2=1
-//				     And 'theta' is the angle between the normal and the
-// 				     ray direction.
-//				     R(theta) gives the amount Rs of reflected light, 
-//				     1.0-R(theta) gives the amount Rt of transmitted light.
-//                                * Now, make a ray in the mirror-reflection direction
-//				     (same as for material type 0), with the same colour
-//				     as the incoming ray, but with intensity modulated
-//				     by Rs. (e.g. if the incoming's colour is R,G,B,
-//                                  the reflected ray's colour will be R*Rs, G*Rs, B*Rs)
-//				     trace this ray.
-//				   * Make a ray in the refracted-ray direction. The 
-//				     angle for the transmitted ray is given by Snell's law
-//				     n1*sin(theta1) = n2*sin(theta2). The colour of the
-//				     transmitted ray is the same as the incoming ray but
-//			             modulated by Rt. Trace this ray.
- //	That's it! you're done!
-
 
 void intersectRay(struct ray2D *ray, struct point2D *p, struct point2D *n, double *lambda, int *type, double *r_idx)
 {
