@@ -125,17 +125,17 @@ for i=0:.05:12*pi
   %% Determine the current point [xa, ya, za] on the hypotrochoid
   %% corresponding to t=i from the for loop above.
 
-  xa=0;     % Dummy point on curve, replace with actual
-  ya=0;     % location on the curve from the curve's
-  za=0;     % parametric equations!
+  xa=((R+r)*cos(i))-(r*cos(((R+r)/r)*i));     % Dummy point on curve, replace with actual
+  ya=((R+r)*sin(i))-(r*sin(((R+r)/r)*i));     % location on the curve from the curve's
+  za=r*cos((R/r)*i);                          % parametric equations!
   
   %% Part 1 code goes just below these comments!
   %% Compute tx, ty, and tz, the components of
   %% the tangent vector
 
-  tx=0;
-  ty=0;         % DUMMY VECTOR, replace with correct one. 
-  tz=1;
+  tx=((R+r)*(sin(((R+r)/r)*i)-sin(i)));
+  ty=((R+r)*(cos(i)-cos(((R+r)/r)*i)));         % DUMMY VECTOR, replace with correct one. 
+  tz=-R*sin((R/r)*i);
   
   tangents(end+1,:)=[tx ty tz];
 
@@ -156,41 +156,41 @@ for i=0:.05:12*pi
   %%%% for this to work so right now this is commented out. Uncomment the
   %%%% code below when you're ready to work on this part.
   
-%  	vx=0;
-%  	vy=0;	% These are dummy vectors, replace with the
-%  	vz=1;	% correct ones!
-%  
-%  	ux=0;
-%  	uy=0;
-%  	uz=1;
-%  
-%  	v=[vx vy vz];
-%  	u=[ux uy uz];
-%  
-%  	% Let's plot a parametric circle using these vectors.
-%  	% it they are correct, you should get circles that
-%  	% are perpendicular to the curve at each of the points
-%  	% where we computed a tangent vector.
-%      % To do this, we're using a parametric circle
-%      %
-%      %   C(t)=v*cos(t) + u*sin(t), t in [0, 2*pi]
-%      %
-%      % and since the circle is centered at point p
-%      % on the curve, we have:
-%      %
-%      %   C(t)=p + v*cos(t) + u*sin(t), t in [0, 2*pi]
-%      %
-%      % It looks weird below because I'm using Matlab
-%      % operators to get all points in one go without 
-%      % using loops, but I'm just evaluating the
-%      % equation above! (yes, really!).cl
-%  
-%    	t_circ=[0:.1:2*pi]';
-%        rad=.5;				% Circle radius!
-%    	p_circ=repmat([xa ya za],[length(t_circ) 1]);
-%        p_circ=p_circ+(repmat(rad*cos(t_circ),[1 3]).*repmat(v,[length(t_circ),1]));
-%        p_circ=p_circ+(repmat(rad*sin(t_circ),[1 3]).*repmat(u,[length(t_circ) 1]));
-%        plot3(p_circ(:,1),p_circ(:,2),p_circ(:,3),'.','color',[0 .75 0]);
+ 	vx=0;
+ 	vy=0;	% These are dummy vectors, replace with the
+ 	vz=1;	% correct ones!
+ 
+ 	ux=0;
+ 	uy=0;
+ 	uz=1;
+ 
+ 	v=[vx vy vz];
+ 	u=[ux uy uz];
+ 
+ 	% Let's plot a parametric circle using these vectors.
+ 	% it they are correct, you should get circles that
+ 	% are perpendicular to the curve at each of the points
+ 	% where we computed a tangent vector.
+     % To do this, we're using a parametric circle
+     %
+     %   C(t)=v*cos(t) + u*sin(t), t in [0, 2*pi]
+     %
+     % and since the circle is centered at point p
+     % on the curve, we have:
+     %
+     %   C(t)=p + v*cos(t) + u*sin(t), t in [0, 2*pi]
+     %
+     % It looks weird below because I'm using Matlab
+     % operators to get all points in one go without 
+     % using loops, but I'm just evaluating the
+     % equation above! (yes, really!).cl
+ 
+   	t_circ=[0:.1:2*pi]';
+       rad=.5;				% Circle radius!
+   	p_circ=repmat([xa ya za],[length(t_circ) 1]);
+       p_circ=p_circ+(repmat(rad*cos(t_circ),[1 3]).*repmat(v,[length(t_circ),1]));
+       p_circ=p_circ+(repmat(rad*sin(t_circ),[1 3]).*repmat(u,[length(t_circ) 1]));
+       plot3(p_circ(:,1),p_circ(:,2),p_circ(:,3),'.','color',[0 .75 0]);
         
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% SAVE THIS FIGURE, you need to submit it. And the code below will change the plot!
