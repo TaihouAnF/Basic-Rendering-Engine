@@ -18,15 +18,15 @@
 %%
 %% Student 1:
 %%
-%%	Name:
-%%	Student Number:
-%%	UTORid:
+%%	Name: Anson Feng
+%%	Student Number: 1004721955
+%%	UTORid: fengdian
 %%
 %% Student 2:
 %%
-%%	Name:
-%%	Student Number:
-%%	UTORid:
+%%	Name: Peter Chou
+%%	Student Number: 1004295693
+%%	UTORid: choulu1
 %%
 %% We hereby confirm that the solution we provide for
 %% this assignment is our own, and that it was developed
@@ -36,9 +36,9 @@
 %%
 %% Sign with your name:
 %%
-%%	Student 1:
+%%	Student 1: Anson Feng
 %%
-%%	Student 2:
+%%	Student 2: Peter Chou
 %%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
