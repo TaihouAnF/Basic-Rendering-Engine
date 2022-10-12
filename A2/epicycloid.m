@@ -156,13 +156,19 @@ for i=0:.05:12*pi
   %%%% for this to work so right now this is commented out. Uncomment the
   %%%% code below when you're ready to work on this part.
   
- 	vx=0;
- 	vy=0;	% These are dummy vectors, replace with the
- 	vz=1;	% correct ones!
+  up=[0 0 1];
+  temp_w=tangents(end,:);
+  temp_w=temp_w/norm(temp_w);
+  temp_u=cross(up,temp_w)/norm(cross(up,temp_w));
+  temp_v=cross(temp_w, temp_u);
+
+ 	vx=temp_v(1);
+ 	vy=temp_v(2);	% These are dummy vectors, replace with the
+ 	vz=temp_v(3);	% correct ones!
  
- 	ux=0;
- 	uy=0;
- 	uz=1;
+ 	ux=temp_u(1);
+ 	uy=temp_u(2);
+ 	uz=temp_u(3);
  
  	v=[vx vy vz];
  	u=[ux uy uz];
