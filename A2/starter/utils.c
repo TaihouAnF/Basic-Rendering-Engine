@@ -17,18 +17,18 @@
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
 *
-* 1) Student Name:		
-* 2) Student Name:		
+* 1) Student Name:		Anson Feng
+* 2) Student Name:		Peter Chou
 *
-* 1) Student number:
-* 2) Student number:
+* 1) Student number:  1004721955
+* 2) Student number:  1004295693
 * 
-* 1) UtorID
-* 2) UtorID
+* 1) UtorID:          fengdian
+* 2) UtorID:          choulu1
 * 
 * We hereby certify that the work contained here is our own
 *
-* ____________________             _____________________
+* _________Anson Feng__            ________Peter Chou___
 * (sign with your name)            (sign with your name)
 ********************************************************************************/
 
