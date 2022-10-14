@@ -122,6 +122,12 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
  // reference of what to do in here
  /////////////////////////////////////////////////////////////
 
+  *lambda = -1.0;
+  struct object3D *Obj_head = object_list;
+  while (Obj_head != NULL) {
+      // TODO, find intersection
+  }
+
 }
 
 void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object3D *Os)
@@ -156,6 +162,24 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
  // TO DO: Complete this function. Refer to the notes
  // if you are unsure what to do here.
  ///////////////////////////////////////////////////////
+  findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
+
+  if (lambda > 0) {
+
+    // Shading to obtain the color
+    rtShade(obj, &p, &n, ray, depth, a, b, &I);
+
+    // Update the color
+    col->R = I.R;
+    col->G = I.G;
+    col->B = I.B;
+  }
+  else {  // if lambda <=0, col = background, as we set before passing in rayTrace()
+    col->R = col->R;
+    col->G = col->G;
+    col->B = col->B;
+  }
+
 }
 
 int main(int argc, char *argv[])
@@ -310,6 +334,52 @@ int main(int argc, char *argv[])
     // TO DO - complete the code that should be in this loop to do the
     //         raytracing!
     ///////////////////////////////////////////////////////////////////
+
+    // Setting up the point on the image plane in camera coordinate
+    pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
+    pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
+    pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
+    pc.pw = 1;                  // homogeneous point so the w is 1
+    
+    // Convert the point to the World coordinate
+    matVecMult(cam->C2W, &pc);
+
+    // Getting direction vector in world coordinate by pc(World) - e(World)
+    d.px = pc.px - e.px;        // x of direction vector in World coordinate
+    d.py = pc.py - e.py;        // y of direction vector in World coordinate
+    d.pz = pc.pz - e.pz;        // z of direction vector in World coordinate
+    d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
+                                // and pc.pw - e.pw supposed to be 0
+    // normalize it
+    normalize(&d);
+
+    // Create the ray
+    initRay(&ray, &pc, &d);
+
+    // Initialize the color, we might use it to handle
+    // rayTrace has a negative lambda and we need to set
+    // the color to background.
+    col.R = background.R;
+    col.G = background.G;
+    col.B = background.B;
+
+    // Trace the ray to get the color, if lambda > 0, color will be changed
+    rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
+
+    /*  
+    *   Set pixel color, TODO: needs double check:
+    *   We can see rgbIm as a flatten version of the image plane,
+    *   we have sx columns and sy rows, as i represents column and j rows,
+    *   we put all the indices into one row => 
+    *   [0 1 2 ... i ... sx sx+1 ... 2sx ... j*sx+i ... sysx]
+    *   we can see sx+1 will be the first index of the second row, so
+    *   ij-th index would be j*sx+i in the array. And further, we expand 
+    *   each index to have 3 index to store R, G and B.
+    */
+
+    *(rgbIm + (j * sx + i) * 3) = (unsigned char)col.R;
+    *(rgbIm + (j * sx + i) * 3 + 1) = (unsigned char)col.G;
+    *(rgbIm + (j * sx + i) * 3 + 2) = (unsigned char)col.B;
 
   } // end for i
  } // end for j
