@@ -123,9 +123,47 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
  /////////////////////////////////////////////////////////////
 
   *lambda = -1.0;
-  struct object3D *Obj_head = object_list;
-  while (Obj_head != NULL) {
-      // TODO, find intersection
+  struct object3D *obj_head = object_list;
+  while (obj_head != NULL) {
+    // Check if current obj is the object source
+    if (obj_head != Os) {
+      
+      // Find intersection with current obj
+      double temp_lambda;     // temp lambda to store the result
+      struct point3D temp_p;  // temp intersect point, only used when temp_lambda is valid
+      struct point3D temp_n;  // temp normal, same as above
+      double temp_a, temp_b;  // temp a and b, same as above
+      obj_head->intersect(obj_head, ray, &temp_lambda, &temp_p, &temp_n, &temp_a, &temp_b);
+      
+      // If current smallest lambda is small than 0 
+      // OR new lambda is smaller than current smallest.
+      // And the new lambda should be > 0
+      if ((*lambda < 0.0 || temp_lambda < *lambda) && temp_lambda > 0) {
+        
+        // Update lambda
+        *lambda = temp_lambda;
+
+        // Update intersection point
+        p->px = temp_p.px;
+        p->py = temp_p.py;
+        p->pz = temp_p.pz;
+        p->pw = 1;
+
+        // Update normal
+        n->px = temp_n.px;
+        n->py = temp_n.py;
+        n->pz = temp_n.pz;
+        n->pw = 1;
+
+        // Update texture a and b
+        *a = temp_a;
+        *b = temp_b; 
+
+        // Update the obj
+        *obj = obj_head;
+      }
+    }
+    obj_head = obj_head->next;
   }
 
 }
@@ -377,9 +415,9 @@ int main(int argc, char *argv[])
     *   each index to have 3 index to store R, G and B.
     */
 
-    *(rgbIm + (j * sx + i) * 3) = (unsigned char)col.R;
-    *(rgbIm + (j * sx + i) * 3 + 1) = (unsigned char)col.G;
-    *(rgbIm + (j * sx + i) * 3 + 2) = (unsigned char)col.B;
+    *(rgbIm + (j * sx + i) * 3) = (unsigned char)(col.R * 255);
+    *(rgbIm + (j * sx + i) * 3 + 1) = (unsigned char)(col.G * 255);
+    *(rgbIm + (j * sx + i) * 3 + 2) = (unsigned char)(col.B * 255);
 
   } // end for i
  } // end for j
