@@ -96,7 +96,55 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
  // details about the shading model.
  //////////////////////////////////////////////////////////////
 
+  // Local component, setting up a shadow ray
+  // struct pointLS *curr_ls = light_list;
+  // struct ray3D shadow_ray;
+  // shadow_ray.p0.px = p->px;
+  // shadow_ray.p0.py = p->py;
+  // shadow_ray.p0.pz = p->pz;
+  // shadow_ray.p0.pw = 1;
+
+  // shadow_ray.d.px = curr_ls->p0.px - p->px;
+  // shadow_ray.d.py = curr_ls->p0.py - p->py;
+  // shadow_ray.d.pz = curr_ls->p0.pz - p->pz;
+  // shadow_ray.d.pw = 0;
+
+  // // Initialize shadow lambda, 
+  // // and temp_varobj for findFirstHit to return
+  // double shadow_lambda;
+  // struct object3D *temp_var_obj;
+  // struct point3D shadow_temp_p;
+  // struct point3D shadow_temp_n;
+  // double shadow_a, shadow_b;
+  // findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj, 
+  //              &shadow_temp_p,&shadow_temp_n; &shadow_a, &shadow_b);
+  // if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
+  //   tmp_col.R += R * (obj->alb.ra * curr_ls->col.R);
+  //   tmp_col.G += G * (obj->alb.ra * curr_ls->col.G);
+  //   tmp_col.B += B * (obj->alb.ra * curr_ls->col.B);
+  // }
+  // else {
+  //   // normal phong model
+  // }
+
+  // Global component
+  // if (depth < MAX_DEPTH) {
+  //   if (obj has specular)
+  // }
+  //   if (obj has refraction)
+  //      if (not fully refraction)
+  // Ig = Ise + Ire
+  // else Ig = 0
+  // tmp_col += Ig;
+
+  /* Currently use this to generate signature. */
+  tmp_col.R += obj->col.R * obj->alb.ra;
+  tmp_col.G += obj->col.G * obj->alb.ra;
+  tmp_col.B += obj->col.B * obj->alb.ra;
  // Be sure to update 'col' with the final colour computed here!
+  col->R = tmp_col.R;
+  col->G = tmp_col.G;
+  col->B = tmp_col.B;
  return;
 
 }
@@ -119,7 +167,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
 
  /////////////////////////////////////////////////////////////
  // TO DO: Implement this function. See the notes for
- // reference of what to do in here
+ // reference of what to do in here. Done
  /////////////////////////////////////////////////////////////
 
   *lambda = -1.0;
@@ -198,7 +246,7 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
 
  ///////////////////////////////////////////////////////
  // TO DO: Complete this function. Refer to the notes
- // if you are unsure what to do here.
+ // if you are unsure what to do here. Done
  ///////////////////////////////////////////////////////
   findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
 
@@ -347,7 +395,7 @@ int main(int argc, char *argv[])
  //        raytracing pseudocode, for details on what
  //        to do here. Make sure you undersand the
  //        overall procedure of raytracing for a single
- //        pixel.
+ //        pixel. Done
  //////////////////////////////////////////////////////
  du=cam->wsize/(sx-1);		// du and dv. In the notes in terms of wl and wr, wt and wb,
  dv=-cam->wsize/(sx-1);		// here we use wl, wt, and wsize. du=dv since the image is
@@ -370,7 +418,7 @@ int main(int argc, char *argv[])
   {
     ///////////////////////////////////////////////////////////////////
     // TO DO - complete the code that should be in this loop to do the
-    //         raytracing!
+    //         raytracing! Done
     ///////////////////////////////////////////////////////////////////
 
     // Setting up the point on the image plane in camera coordinate

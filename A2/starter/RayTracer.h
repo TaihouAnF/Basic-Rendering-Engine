@@ -146,7 +146,7 @@ struct object3D{
 	double  alpha;			// Opacity - if less than 1 this is a semi transparent object and refraction rays
 					// should be implemented
 	double  r_index;		// Index of refraction
-        double  shinyness;		// Exponent for the Phong specular component
+    double  shinyness;		// Exponent for the Phong specular component
 	int 	frontAndBack;		// Flag to indicate that both sides of the object
 					// should be lit.
 	int	isLightSource;		// Flag to indicate if this is an area light source
