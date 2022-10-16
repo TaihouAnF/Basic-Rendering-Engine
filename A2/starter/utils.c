@@ -105,6 +105,7 @@ inline void rayTransform(struct ray3D *ray_orig, struct ray3D *ray_transformed, 
  ray_transformed->d = ray_orig->d;
  ray_transformed->d.pw = 0;
  matVecMult(obj->Tinv, &(ray_transformed->d));
+ normalize(&(ray_transformed->d));
  
  // Passing rayPos auxiliary from ray_orig to ray_trans.
  ray_transformed->rayPos = ray_orig->rayPos;
@@ -312,7 +313,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  // between the specified ray and the specified canonical plane.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
 
  // Assume the ray would hit an affinely transformed obj,
@@ -349,26 +350,41 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
   // lambda > 0, and lambda has the same value in both cases
   // (deform and transform)
   if (temp_intersect_lambda > 0) {
+    
+    // Make sure it doesn't intersect out of bound, similar to A1 wall and
+    // triangle, but we know the exact location of edge and point of the plane
+    // so we don't have to use [e cross (p-p1)] dot normal >= 0.
+    struct point3D temp_intersect_point;
+    deformed_ray.rayPos(&deformed_ray, temp_intersect_lambda, &temp_intersect_point);
+    if (temp_intersect_point.px > -1.0 && temp_intersect_point.px < 1.0 && 
+        temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0 && 
+        temp_intersect_point.pz == 0.0) {
+          
+          // Update lambda 
+          *lambda = temp_intersect_lambda;
 
-    // Update lambda 
-    *lambda = temp_intersect_lambda;
-    
-    // obtain the intersect point
-    struct point3D temp_intersect_point_transform;
-    ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
-    // Update transform intersect point
-    *p = temp_intersect_point_transform;
-    
-    // Update normal from deform to transform (plane has [0, 0, 1] as default normal)
-    struct point3D temp_plane_normal_transform;
-    normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
-    *n = temp_plane_normal_transform;
-    
-    // Change a and b, might change in future assignment
-    *a = *a;
-    *b = *b;
+          // obtain the intersect point
+          struct point3D temp_intersect_point_transform;
+          ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
+          // Update transform intersect point
+          *p = temp_intersect_point_transform;
+
+          // Update normal from deform to transform (plane has [0, 0, 1] as default normal)
+          struct point3D temp_plane_normal_transform;
+          normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
+          *n = temp_plane_normal_transform;
+          
+          // Change a and b, might change in future assignment
+          *a = *a;
+          *b = *b;
+    }
   }
  }
+
+ // free allocated temp point/normal, as we used newPoint()
+ free(temp_plane_point);
+ free(temp_plane_normal);
+
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -379,6 +395,73 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  /////////////////////////////////
  // TO DO: Complete this function.
  /////////////////////////////////
+
+ // Similar to plane intersect, we have to deform the ray first
+ struct ray3D deformed_ray;
+ rayTransform(ray, &deformed_ray, sphere);
+
+
+ // Calculating the A B C and D
+ struct point3D *temp_origin = newPoint(0.0, 0.0, 0.0);
+ struct point3D temp_rayS_ori = deformed_ray.p0;
+ subVectors(temp_origin, &temp_rayS_ori);
+ 
+ double A = dot(&deformed_ray.d, &deformed_ray.d);
+ double B = dot(&temp_rayS_ori, &deformed_ray.d);
+ double C = dot(&temp_rayS_ori, &temp_rayS_ori) - 1.0;
+ double D = (B * B) - (A * C);
+ 
+ // Check discriminant and update lambda
+ if (D < 0) {
+  free(temp_origin);
+  return;
+ }
+ else if (D == 0) {
+  *lambda = - (B / A);
+ }
+ else if (D > 0) {   // D > 0, can change to else instead of else if
+  double lambda_1 = -(B / A) + (sqrt(D) / A);
+  double lambda_2 = -(B / A) - (sqrt(D) / A);
+  if (lambda_1 < 0.0 && lambda_2 < 0.0) {
+    return;
+  }
+  else if (lambda_1 > 0.0 && lambda_2 > 0.0) {
+    *lambda = (lambda_1 <= lambda_2) ? lambda_1 : lambda_2;
+  }
+  else if (lambda_1 > 0.0 && lambda_2 < 0.0) {
+    *lambda = lambda_1;
+  }
+  else if (lambda_2 > 0.0 && lambda_1 < 0.0) {
+    *lambda = lambda_2;
+  }
+  else { // can be removed
+    free(temp_origin);
+    return;
+  }
+ }
+ else { // can be removed
+  free(temp_origin);
+  return;
+ }
+ 
+ // Update intersection point
+ struct point3D temp_intersect_point_transform;
+ ray->rayPos(ray, *lambda, &temp_intersect_point_transform);
+ *p = temp_intersect_point_transform;
+
+ // Update normal transform
+ struct point3D temp_sphere_normal;
+ deformed_ray.rayPos(&deformed_ray, *lambda, &temp_sphere_normal);
+ subVectors(temp_origin, &temp_sphere_normal);
+ struct point3D temp_sphere_normal_transform;
+ normalTransform(&temp_sphere_normal, &temp_sphere_normal_transform, sphere);
+ *n = temp_sphere_normal_transform;
+
+ // Update a and b
+ *a = *a;
+ *b = *b;
+ 
+ free(temp_origin);
 }
 
 void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)

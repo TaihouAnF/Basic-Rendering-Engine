@@ -138,9 +138,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
   // tmp_col += Ig;
 
   /* Currently use this to generate signature. */
-  tmp_col.R += obj->col.R * 1.0 //* obj->alb.ra * curr_ls->col.R;
-  tmp_col.G += obj->col.G * 1.0 //* obj->alb.ra * curr_ls->col.G;
-  tmp_col.B += obj->col.B * 1.0 //* obj->alb.ra * curr_ls->col.B;
+  tmp_col.R += obj->col.R * 1.0; //* obj->alb.ra * curr_ls->col.R;
+  tmp_col.G += obj->col.G * 1.0; //* obj->alb.ra * curr_ls->col.G;
+  tmp_col.B += obj->col.B * 1.0; //* obj->alb.ra * curr_ls->col.B;
  // Be sure to update 'col' with the final colour computed here!
   col->R = tmp_col.R;
   col->G = tmp_col.G;
@@ -177,7 +177,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     if (obj_head != Os) {
       
       // Find intersection with current obj
-      double temp_lambda;     // temp lambda to store the result
+      double temp_lambda = 0.0;     // temp lambda to store the result
       struct point3D temp_p;  // temp intersect point, only used when temp_lambda is valid
       struct point3D temp_n;  // temp normal, same as above
       double temp_a, temp_b;  // temp a and b, same as above
@@ -263,7 +263,9 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
     col->G = I.G;
     col->B = I.B;
   }
-  else {  // if lambda <=0, col = background, as we set before passing in rayTrace()
+  // if lambda <=0, col = background/originate obj,
+  // as we set before passing in rayTrace()
+  else {  
     col->R = col->R;
     col->G = col->G;
     col->B = col->B;
