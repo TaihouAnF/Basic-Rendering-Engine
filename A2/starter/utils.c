@@ -357,8 +357,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
     struct point3D temp_intersect_point;
     deformed_ray.rayPos(&deformed_ray, temp_intersect_lambda, &temp_intersect_point);
     if (temp_intersect_point.px > -1.0 && temp_intersect_point.px < 1.0 && 
-        temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0 && 
-        temp_intersect_point.pz == 0.0) {
+        temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0) {
           
           // Update lambda 
           *lambda = temp_intersect_lambda;
