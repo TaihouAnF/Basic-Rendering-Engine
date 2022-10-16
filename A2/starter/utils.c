@@ -122,7 +122,7 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
  ///////////////////////////////////////////
 
  // Before transform, making sure pw = 1
- n_transformed = *n_orig;
+ *n_transformed = *n_orig;
  n_transformed->pw = 1;
 
  // Make transpose of Tinv
@@ -346,14 +346,27 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  if (down != 0) {
   double temp_intersect_lambda = up / down;
   // if the ray intersect the obj in the direction d(correct direction),
-  // lambda > 0
+  // lambda > 0, and lambda has the same value in both cases
+  // (deform and transform)
   if (temp_intersect_lambda > 0) {
+
+    // Update lambda 
+    *lambda = temp_intersect_lambda;
+    
     // obtain the intersect point
     struct point3D temp_intersect_point_transform;
     ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
     // Update transform intersect point
     *p = temp_intersect_point_transform;
-    // update normal TODOTMR
+    
+    // Update normal from deform to transform (plane has [0, 0, 1] as default normal)
+    struct point3D temp_plane_normal_transform;
+    normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
+    *n = temp_plane_normal_transform;
+    
+    // Change a and b, might change in future assignment
+    *a = *a;
+    *b = *b;
   }
  }
 }
