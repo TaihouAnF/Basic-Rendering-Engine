@@ -138,9 +138,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
   // tmp_col += Ig;
 
   /* Currently use this to generate signature. */
-  tmp_col.R += obj->col.R * obj->alb.ra;
-  tmp_col.G += obj->col.G * obj->alb.ra;
-  tmp_col.B += obj->col.B * obj->alb.ra;
+  tmp_col.R += obj->col.R * 1.0 //* obj->alb.ra * curr_ls->col.R;
+  tmp_col.G += obj->col.G * 1.0 //* obj->alb.ra * curr_ls->col.G;
+  tmp_col.B += obj->col.B * 1.0 //* obj->alb.ra * curr_ls->col.B;
  // Be sure to update 'col' with the final colour computed here!
   col->R = tmp_col.R;
   col->G = tmp_col.G;
@@ -209,6 +209,9 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
 
         // Update the obj
         *obj = obj_head;
+
+        // Update Os
+        Os = obj_head;
       }
     }
     obj_head = obj_head->next;
@@ -427,7 +430,8 @@ int main(int argc, char *argv[])
     pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
     pc.pw = 1;                  // homogeneous point so the w is 1
     
-    // Convert the point to the World coordinate
+    // Convert the point to the World coordinate and pc.pw is still 1, 
+    // check C2W and matVecMult to convince
     matVecMult(cam->C2W, &pc);
 
     // Getting direction vector in world coordinate by pc(World) - e(World)

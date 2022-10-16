@@ -93,8 +93,22 @@ inline void rayTransform(struct ray3D *ray_orig, struct ray3D *ray_transformed, 
  // use the intersection test for the canonical object. Note that this has to be done carefully!
 
  ///////////////////////////////////////////
- // TO DO: Complete this function
+ // TO DO: Complete this function. Done
  ///////////////////////////////////////////
+
+ // Deformation of ray source point
+ ray_transformed->p0 = ray_orig->p0;
+ ray_transformed->p0.pw = 1;
+ matVecMult(obj->Tinv, &(ray_transformed->p0));
+
+ // Deformation of ray direction vector
+ ray_transformed->d = ray_orig->d;
+ ray_transformed->d.pw = 0;
+ matVecMult(obj->Tinv, &(ray_transformed->d));
+ 
+ // Passing rayPos auxiliary from ray_orig to ray_trans.
+ ray_transformed->rayPos = ray_orig->rayPos;
+
 }
 
 inline void normalTransform(struct point3D *n_orig, struct point3D *n_transformed, struct object3D *obj)
@@ -104,8 +118,33 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
  // n_transformed=A^-T*n normalized.
 
  ///////////////////////////////////////////
- // TO DO: Complete this function
+ // TO DO: Complete this function. Done
  ///////////////////////////////////////////
+
+ // Before transform, making sure pw = 1
+ n_transformed = *n_orig;
+ n_transformed->pw = 1;
+
+ // Make transpose of Tinv
+ double transpose_Tinv[4][4];
+ for (int i = 0; i < 4; i++) {
+  for (int j = 0; j < 4; j++) {
+    transpose_Tinv[i][j] = obj->Tinv[j][i];
+  }
+ }
+
+ // Multiply transpose with normal to get the affinely
+ // transformed normal, and subtract extra values
+ // in each xyz as we previously assign pw = 1.
+ matVecMult(transpose_Tinv, n_transformed);
+ n_transformed->px = n_transformed->px - transpose_Tinv[0][3];
+ n_transformed->py = n_transformed->py - transpose_Tinv[1][3];
+ n_transformed->pz = n_transformed->pz - transpose_Tinv[2][3];
+ n_transformed->pw = 1; 
+
+ // normalize it
+ normalize(n_transformed);
+
 }
 
 /////////////////////////////////////////////
@@ -275,6 +314,48 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  /////////////////////////////////
  // TO DO: Complete this function.
  /////////////////////////////////
+
+ // Assume the ray would hit an affinely transformed obj,
+ // and we can only obtain intersection pt on canonical obj,
+ // so we need to affinely deform the ray first
+ struct ray3D deformed_ray;
+ rayTransform(ray, &deformed_ray, plane);
+
+ // Intersect with the plane (p - p1) dot normal = 0, 
+ // and substituting r(lambda) for p  
+ // =>  (ray->p0 + lambda*ray->d - p1) dot normal = 0
+ // =>  lambda = [(p1 - ray->p0) dot normal] / (ray->d dot normal)
+
+ // Pick one point (1, 1, 0) 
+ struct point3D *temp_plane_point;
+ temp_plane_point = newPoint(1, 1, 0);
+
+ // Make a temp_normal [0, 0, 1]
+ struct point3D *temp_plane_normal;
+ temp_plane_normal = newPoint(0, 0, 1);
+
+ // Subtract vector/points
+ subVectors(&(deformed_ray.p0), temp_plane_point);
+
+ // Dot product section
+ double up = dot(temp_plane_point, temp_plane_normal);
+ double down = dot(&(deformed_ray.d), temp_plane_normal);
+
+ // Check direction of ray and normal, see if they will intersect:
+ // if down = 0, it means the ray is parallel to the surface;
+ if (down != 0) {
+  double temp_intersect_lambda = up / down;
+  // if the ray intersect the obj in the direction d(correct direction),
+  // lambda > 0
+  if (temp_intersect_lambda > 0) {
+    // obtain the intersect point
+    struct point3D temp_intersect_point_transform;
+    ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
+    // Update transform intersect point
+    *p = temp_intersect_point_transform;
+    // update normal TODOTMR
+  }
+ }
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
