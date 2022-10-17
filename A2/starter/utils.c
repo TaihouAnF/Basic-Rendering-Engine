@@ -392,7 +392,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  // between the specified ray and the specified canonical sphere.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
 
  // Similar to plane intersect, we have to deform the ray first
@@ -463,14 +463,178 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  free(temp_origin);
 }
 
-void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
+void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
 {
  // Computes and returns the value of 'lambda' at the intersection
  // between the specified ray and the specified canonical cylinder.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////  
+
+ // Similar to sphere, we deform the ray first
+ struct ray3D deformed_ray;
+ rayTransform(ray, &deformed_ray, cylinder);
+
+ // Might have multiple intersections, might be on cap/bottom, might be on wall
+ // Calculate wall first. Ignoring z-axis.
+ struct ray3D deformed_ray_without_z;
+ deformed_ray_without_z = deformed_ray;
+ deformed_ray_without_z.p0.pz = 0;
+ deformed_ray_without_z.p0.pw = 1;
+ deformed_ray_without_z.d.pz = 0;
+ deformed_ray_without_z.d.pw = 0;
+
+ // Calculating discriminant
+ double A = dot(&deformed_ray_without_z.d, &deformed_ray_without_z.d);
+ double B = 2 * dot(&deformed_ray_without_z.d, &deformed_ray_without_z.p0);
+ double C = dot(&deformed_ray_without_z.p0, &deformed_ray_without_z.p0) - 1;
+ double D = (B * B) - (4 * A * C);
+
+ // Initialize a lambda_wall to store lambda for wall
+ // then calculate lambda, pick the smallest positive
+ double lambda_wall = -1.0;
+ if (D == 0) {
+  lambda_wall = -B / (2 * A);
+ }
+ else if (D > 0) {
+  double lambda_w1 = (-B + sqrt(D)) / (2 * A);
+  double lambda_w2 = (-B - sqrt(D)) / (2 * A);
+  if (lambda_w1 > 0.0 && lambda_w2 > 0.0) {
+    lambda_wall = (lambda_w1 <= lambda_w2) ? lambda_w1 : lambda_w2;
+  }
+  else if (lambda_w1 > 0.0 && lambda_w2 < 0.0) {
+    lambda_wall = lambda_w1;
+  }
+  else if (lambda_w2 > 0.0 && lambda_w1 < 0.0) {
+    lambda_wall = lambda_w2;
+  }
+ }
+
+ // Check whether it intersects the wall within |z| <= 1
+ struct point3D temp_cylinder_point_wall;
+ deformed_ray.rayPos(&deformed_ray, lambda_wall, &temp_cylinder_point_wall);
+ if (temp_cylinder_point_wall.pz < -1.0 ||
+     temp_cylinder_point_wall.pz > 1.0) {
+    lambda_wall = -1.0;
+ }
+
+ // Initialize a lambda_cap to store lambda for cap
+ double lambda_cap_base = -1.0;
+ double temp_lambda_cap = (1.0 - deformed_ray.p0.pz) / deformed_ray.d.pz;
+ double temp_lambda_base = (-1.0 - deformed_ray.p0.pz) / deformed_ray.d.pz;
+ double temp_small = -1.0;
+ double temp_large = -1.0;
+ bool both = false;
+ bool cap = false;
+
+ // Check cases
+ if (temp_lambda_base > 0.0 && temp_lambda_cap > 0.0) {
+    if (temp_lambda_base >= temp_lambda_cap) {
+      temp_small = temp_lambda_base;
+      temp_large = temp_lambda_cap;
+      cap = false;
+    }
+    else {
+      temp_small = temp_lambda_cap;
+      temp_large = temp_lambda_base;
+      cap = true;
+    }
+    both = true;
+ }
+ else if (temp_lambda_base > 0.0 && temp_lambda_cap < 0.0) {
+    temp_small = temp_lambda_base;
+    cap = false;
+ }
+ else if (temp_lambda_cap > 0.0 && temp_lambda_base < 0.0) {
+    temp_small = temp_lambda_cap;
+    cap = true;
+ }
+ 
+ // Start checking interior constraint
+ struct point3D temp_cylinder_point_cap;
+ if (both) {
+  deformed_ray.rayPos(&deformed_ray, temp_small, &temp_cylinder_point_cap);
+  if (pow(temp_cylinder_point_cap.px, 2) +
+      pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+      lambda_cap_base = temp_small;
+  }
+  // This is somehow unneccessary, 
+  // as it will be blocked by wall when reaching the other end
+  else {
+    deformed_ray.rayPos(&deformed_ray, temp_large, &temp_cylinder_point_cap);
+    if (pow(temp_cylinder_point_cap.px, 2) +
+        pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+        lambda_cap_base = temp_large;
+        cap = !cap;
+    }
+  }
+ }
+ else {
+  deformed_ray.rayPos(&deformed_ray, temp_small, &temp_cylinder_point_cap);
+  if (pow(temp_cylinder_point_cap.px, 2) +
+      pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+      lambda_cap_base = temp_small;
+  }
+ }
+
+ // Now find the smallest positive lambda for intersection
+ // and update intersection point and normal here, normal 
+ // normal might have different cases(cap/base v.s. wall)
+ if ((lambda_wall > lambda_cap_base && lambda_cap_base > 0.0) ||
+     (lambda_cap_base > 0.0 && lambda_wall < 0.0)) {
+  
+  // Update lambda
+  *lambda = lambda_cap_base;
+
+  // Update intersection point
+  struct point3D temp_intersect_point_transform;
+  ray->rayPos(ray, lambda_cap_base, &temp_intersect_point_transform);
+  *p = temp_intersect_point_transform;
+
+  // Construct normal and transform it
+  struct point3D *temp_cylinder_cap_normal;
+  if (cap) {
+    temp_cylinder_cap_normal = newPoint(0, 0, 1);
+  }
+  else {
+    temp_cylinder_cap_normal = newPoint(0, 0, -1);
+  }
+  struct point3D temp_nor_transfrom;
+  normalTransform(temp_cylinder_cap_normal, &temp_nor_transfrom, cylinder);
+  *n = temp_nor_transfrom;
+
+  *a = *a;
+  *b = *b;
+  
+  free(temp_cylinder_cap_normal);
+ }
+ else if ((lambda_cap_base >= lambda_wall && lambda_wall > 0.0) ||
+          (lambda_wall > 0.0 && lambda_cap_base < 0.0)) {
+  // Update lambda
+  *lambda = lambda_wall;
+
+  // Update intersection point
+  struct point3D temp_intersect_point_transform;
+  ray->rayPos(ray, lambda_wall, &temp_intersect_point_transform);
+  *p = temp_intersect_point_transform;
+
+  // Construct normal and transform it NEED CHECK
+  struct point3D temp_cylinder_wall_normal;
+  deformed_ray.rayPos(&deformed_ray, lambda_wall, &temp_cylinder_wall_normal);
+  temp_cylinder_wall_normal.pz = 0;
+  temp_cylinder_wall_normal.pw = 1;
+  normalize(&temp_cylinder_wall_normal);
+  struct point3D temp_nor_transform;
+  normalTransform(&temp_cylinder_wall_normal, &temp_nor_transform, cylinder);
+  *n = temp_nor_transform;
+
+  *a = *a;
+  *b = *b;
+ }
+ else {
+  return;
+ }
 }
 
 /////////////////////////////////////////////////////////////////
