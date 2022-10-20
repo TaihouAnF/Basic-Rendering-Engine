@@ -372,7 +372,6 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
           struct point3D temp_plane_normal_transform;
           normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
           *n = temp_plane_normal_transform;
-          
           // Change a and b, might change in future assignment
           *a = *a;
           *b = *b;
@@ -1116,7 +1115,7 @@ struct view *setupView(struct point3D *e, struct point3D *g, struct point3D *up,
    e - Camera center
    g - Gaze direction
    up - Up vector
-   fov - Fild of view in degrees
+   fov - Field of view in degrees
    f - focal length
  */
  struct view *c;
