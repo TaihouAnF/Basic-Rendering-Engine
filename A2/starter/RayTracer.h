@@ -130,14 +130,14 @@ struct object3D{
 	void (*textureMap)(struct image *img, double a, double b, double *R, double *G, double *B);
 
 	// Functions to return coordinates on the surface of the object. One takes as input the a and b
-        // parameters for the parametric function of the object and returns the (x,y,z) coordinates
-        // on the object surface. The second returns a uniformly random-sampled point on the surface.
-        // These are needed for Photon Mapping.
-        void (*surfaceCoords)(struct object3D *obj, double a, double b, double *x, double *y, double *z);
-        void (*randomPoint)(struct object3D *obj, double *x, double *y, double *z);
-		
-        struct image *texImg;				// Pointer to structure holding the texture for this object
-        struct image *photonMap;			// Photon map for this object
+    // parameters for the parametric function of the object and returns the (x,y,z) coordinates
+    // on the object surface. The second returns a uniformly random-sampled point on the surface.
+    // These are needed for Photon Mapping.
+    void (*surfaceCoords)(struct object3D *obj, double a, double b, double *x, double *y, double *z);
+    void (*randomPoint)(struct object3D *obj, double *x, double *y, double *z);
+
+    struct image *texImg;				// Pointer to structure holding the texture for this object
+    struct image *photonMap;			// Photon map for this object
 	struct image *normalMap;			// Normal map for this object
 	struct image *alphaMap;				// Alpha map for the object
 
