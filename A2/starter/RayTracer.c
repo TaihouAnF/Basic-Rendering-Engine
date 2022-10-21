@@ -96,76 +96,89 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     // details about the shading model.
     //////////////////////////////////////////////////////////////
 
-  // Local component, setting up a shadow ray
-  struct pointLS *curr_ls = light_list;
-  struct ray3D shadow_ray;
-  
-  // Setting up shadow ray direction
-  struct point3D shadow_direction = curr_ls->p0;
-  // b = b - a, where a is p and b is shadow_direction
-  // we store curr_ls-p0 in shadow_direction first, 
-  // we basically are doing these:
-  //  shadow_direction.px = curr_ls->p0.px - p->px;
-  //  shadow_direction.py = curr_ls->p0.py - p->py;
-  //  shadow_direction.pz = curr_ls->p0.pz - p->pz;
-  //  shadow_direction.pw = 0;
-  subVectors(p, &shadow_direction);
-  shadow_direction.pw = 0;
+    // Local component, setting up a shadow ray
+    struct pointLS *curr_ls = light_list;
+    struct ray3D shadow_ray;
 
-  initRay(&shadow_ray, p, &shadow_direction);
+    // Setting up shadow ray direction
+    struct point3D shadow_direction = curr_ls->p0;
+    // b = b - a, where a is p and b is shadow_direction
+    // we store curr_ls-p0 in shadow_direction first,
+    // we basically are doing these:
+    //  shadow_direction.px = curr_ls->p0.px - p->px;
+    //  shadow_direction.py = curr_ls->p0.py - p->py;
+    //  shadow_direction.pz = curr_ls->p0.pz - p->pz;
+    //  shadow_direction.pw = 0;
+    subVectors(p, &shadow_direction);
+    shadow_direction.pw = 0;
 
-  // Initialize shadow lambda, 
-  // and temp_varobj for findFirstHit to return
-  double shadow_lambda;
-  double shadow_a, shadow_b; // might need to initialize in later  
-                             // assignment, same for all those a and b
-  struct object3D *temp_var_obj;
-  struct point3D shadow_temp_p, shadow_temp_n;
-  findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj, 
-               &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
-  
-  if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-    tmp_col.R += R * 0.1; // (obj->alb.ra); // diffuse test
-    tmp_col.G += G * 0.1; // (obj->alb.ra);
-    tmp_col.B += B * 0.1; // (obj->alb.ra);
-  }
-  else {
-    normalize(&shadow_direction);
-    double dot_intensity_max = dot(n, &shadow_direction);
-    if (obj->frontAndBack && dot_intensity_max < 0.0) {
-      struct point3D rev_normal;
-      rev_normal.px = -n->px;
-      rev_normal.py = -n->py;
-      rev_normal.pz = -n->pz;
-      rev_normal.pw = 1;
-      dot_intensity_max = dot(&rev_normal, &shadow_direction);
+    initRay(&shadow_ray, p, &shadow_direction);
+
+    // Initialize shadow lambda,
+    // and temp_varobj for findFirstHit to return
+    double shadow_lambda;
+    double shadow_a, shadow_b; // might need to initialize in later
+    // assignment, same for all those a and b
+    struct object3D *temp_var_obj;
+    struct point3D shadow_temp_p, shadow_temp_n;
+    findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
+                 &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
+
+    if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
+        tmp_col.R += R * 0.1; // (obj->alb.ra); // diffuse test
+        tmp_col.G += G * 0.1; // (obj->alb.ra);
+        tmp_col.B += B * 0.1; // (obj->alb.ra);
     }
-    tmp_col.R += R * (0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)));
-    tmp_col.G += G * (0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)));
-    tmp_col.B += B * (0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)));
-  }
-  
+    else {
+        normalize(&shadow_direction);
+        double dot_intensity_max = dot(n, &shadow_direction);
+        struct point3D* m = newPoint(n->px, n->py, n->pz);
+        if (obj->frontAndBack && dot_intensity_max < 0.0) {
+            struct point3D rev_normal;
+            rev_normal.px = -n->px;
+            rev_normal.py = -n->py;
+            rev_normal.pz = -n->pz;
+            rev_normal.pw = 1;
+            m->px = -m->px;
+            m->py = -m->py;
+            m->pz = -m->pz;
+            dot_intensity_max = dot(&rev_normal, &shadow_direction);
+        }
+        double coeff = 2 * dot_intensity_max;
+        m->px = coeff * m->px;
+        m->py = coeff * m->py;
+        m->pz = coeff * m->pz;
+        subVectors(&shadow_direction, m);
+        struct point3D* camera_dir = newPoint(-ray->d.px, -ray->d.py, -ray->d.pz);
+        double specular = max(0.0, pow(dot(camera_dir, m), obj->shinyness));
+        //tmp_col.R += R * (0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular);
+        //tmp_col.G += G * (0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular);
+        //tmp_col.B += B * (0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular);
+        tmp_col.R += obj->alb.rs * curr_ls->col.R * specular;
+        tmp_col.G += obj->alb.rs * curr_ls->col.G * specular;
+        tmp_col.B += obj->alb.rs * curr_ls->col.B * specular;
+    }
 
-  // Global component
-  // if (depth < MAX_DEPTH) {
-  //   if (obj has specular)
-  // }
-  //   if (obj has refraction)
-  //      if (not fully refraction)
-  // Ig = Ise + Ire
-  // else Ig = 0
-  // tmp_col += Ig;
 
-  /* Currently use this to generate signature. normal */
-  // tmp_col.R += obj->col.R * 1.0; //tmp_col.R += (n->px + 1)/2;
-  // tmp_col.G += obj->col.G * 1.0; //tmp_col.G += (n->py + 1)/2;
-  // tmp_col.B += obj->col.B * 1.0; //tmp_col.B += (n->pz + 1)/2;
- // Be sure to update 'col' with the final colour computed here!
-  col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
-  col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
-  col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
- return;
+    // Global component
+    // if (depth < MAX_DEPTH) {
+    //   if (obj has specular)
+    // }
+    //   if (obj has refraction)
+    //      if (not fully refraction)
+    // Ig = Ise + Ire
+    // else Ig = 0
+    // tmp_col += Ig;
 
+    /* Currently use this to generate signature. normal */
+    // tmp_col.R += obj->col.R * 1.0; //tmp_col.R += (n->px + 1)/2;
+    // tmp_col.G += obj->col.G * 1.0; //tmp_col.G += (n->py + 1)/2;
+    // tmp_col.B += obj->col.B * 1.0; //tmp_col.B += (n->pz + 1)/2;
+    // Be sure to update 'col' with the final colour computed here!
+    col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
+    col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
+    col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
+    return;
 }
 
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
