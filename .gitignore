@@ -1,8 +1,12 @@
 ../.idea
 ../../.idea/vcs.xml
+ ../../.idea/
+.idea/**
+.idea/
 ../**
 RayTracer
 MyRender.ppm
 CMakeLists.txt
 cmake-build-debug
 cmake-build-debug/**
+A2/starter/test.ppm
