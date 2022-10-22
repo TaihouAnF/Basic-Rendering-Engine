@@ -1,0 +1,1 @@
+gdb --args RayTracer 512 10 0 specular.ppm

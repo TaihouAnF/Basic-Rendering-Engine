@@ -114,7 +114,6 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     //  shadow_direction.pw = 0;
     subVectors(p, &shadow_direction);
     shadow_direction.pw = 0;
-
     initRay(&shadow_ray, p, &shadow_direction);
 
     // Initialize shadow lambda,
@@ -128,12 +127,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        tmp_col.R += obj->alb.ra; // diffuse test
-        tmp_col.G += obj->alb.ra;
-        tmp_col.B += obj->alb.ra;
-        m->px = -1;
-        m->py = -1;
-        m->pz = -1;
+        //tmp_col.R += obj->alb.ra; // diffuse test
+        //tmp_col.G += obj->alb.ra;
+        //tmp_col.B += obj->alb.ra;
     } else {
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
@@ -155,9 +151,38 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         subVectors(&shadow_direction, m);
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
         // add the specular term
-        tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
-        tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
-        tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
+        //tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
+        //tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
+        //tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
+        if (depth < MAX_DEPTH) {
+          struct ray3D reflection_ray;
+          struct colourRGB reflection_col;
+          struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
+          double coeff = 2 * dot(n, &ray->p0);
+          reflection_direction->px = coeff * reflection_direction->px;
+          reflection_direction->py = coeff * reflection_direction->py;
+          reflection_direction->pz = coeff * reflection_direction->pz;
+          subVectors(&ray->p0, reflection_direction);
+          normalize(reflection_direction);
+          tmp_col.R = (1 + reflection_direction->pz) / 2;
+          tmp_col.G = (1 + reflection_direction->px) / 2;
+          tmp_col.B = (1 + reflection_direction->py) / 2;
+          //struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
+          //initRay(&reflection_ray, reflection_p, reflection_direction);
+          //rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+          ////if (fabs(reflection_col.R) < 0.01 || fabs(reflection_col.G) < 0.01 || fabs(reflection_col.B) < 0.01) {}
+          ////else {
+          ////    printf("reflection_col is not 0,0,0\n");
+          ////    printf("reflection_col.R: %f\n", reflection_col.R);
+          ////    printf("reflection_col.G: %f\n", reflection_col.G);
+          ////    printf("reflection_col.B: %f\n", reflection_col.B);
+          ////}
+          //tmp_col.R += obj->alb.rs * reflection_col.R;
+          //tmp_col.G += obj->alb.rs * reflection_col.G;
+          //tmp_col.B += obj->alb.rs * reflection_col.B;
+          //free(reflection_direction);
+          //free(reflection_p);
+        }
     }
     // Global component
     // if (depth < MAX_DEPTH) {
@@ -170,9 +195,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     // tmp_col += Ig;
     /* Currently use this to generate signature. normal */
     // Be sure to update 'col' with the final colour computed here!
-    tmp_col.R = R * tmp_col.R;
-    tmp_col.G = G * tmp_col.G;
-    tmp_col.B = B * tmp_col.B;
+    tmp_col.R = tmp_col.R;
+    tmp_col.G = tmp_col.G;
+    tmp_col.B = tmp_col.B;
+   //tmp_col.R = R * tmp_col.R;
+   //tmp_col.G = G * tmp_col.G;
+   //tmp_col.B = B * tmp_col.B;
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
     col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
@@ -270,6 +298,7 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
 
     if (depth>MAX_DEPTH)	// Max recursion depth reached. Return invalid colour.
     {
+        printf("Max recursion depth reached!");
         col->R=-1;
         col->G=-1;
         col->B=-1;

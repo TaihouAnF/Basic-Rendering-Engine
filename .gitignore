@@ -3,3 +3,6 @@
 ../**
 RayTracer
 MyRender.ppm
+CMakeLists.txt
+cmake-build-debug
+cmake-build-debug/**
