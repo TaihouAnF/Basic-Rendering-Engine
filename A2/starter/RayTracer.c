@@ -133,6 +133,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
         struct point3D* m = newPoint(n->px, n->py, n->pz);
+        struct point3D* camera_dir = newPoint(-ray->d.px, -ray->d.py, -ray->d.pz);
         if (obj->frontAndBack && dot_intensity_max < 0.0) {
             struct point3D rev_normal;
             rev_normal.px = -n->px;
@@ -144,37 +145,45 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             m->pz = -m->pz;
             dot_intensity_max = dot(&rev_normal, &shadow_direction);
         }
-        double coeff = 2 * dot_intensity_max;
-        m->px = coeff * m->px;
-        m->py = coeff * m->py;
-        m->pz = coeff * m->pz;
-        subVectors(&shadow_direction, m);
-        struct point3D* camera_dir = newPoint(-ray->d.px, -ray->d.py, -ray->d.pz);
-        double specular = max(0.0, pow(dot(camera_dir, m), obj->shinyness));
-        //tmp_col.R += R * (0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular);
-        //tmp_col.G += G * (0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular);
-        //tmp_col.B += B * (0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular);
-        tmp_col.R += obj->alb.rs * curr_ls->col.R * specular;
-        tmp_col.G += obj->alb.rs * curr_ls->col.G * specular;
-        tmp_col.B += obj->alb.rs * curr_ls->col.B * specular;
+        if (dot_intensity_max < 0.0) {
+            tmp_col.R += 0.1;
+            tmp_col.G += 0.1;
+            tmp_col.B += 0.1;
+        } else {
+            double coeff = 2 * dot_intensity_max;
+            m->px = coeff * m->px;
+            m->py = coeff * m->py;
+            m->pz = coeff * m->pz;
+            subVectors(&shadow_direction, m);
+            double specular = max(0.0, pow(dot(camera_dir, m), obj->shinyness));
+            tmp_col.R += 0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
+            tmp_col.G += 0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
+            tmp_col.B += 0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
+        }
+        //if (depth < MAX_DEPTH) {
+        //    struct ray3D *reflected_ray;
+        //    struct colourRGB *reflected_color;
+        //    struct point3D * new_p = newPoint(p.px, p.py, p.pz);
+        //    initRay(reflected_ray, p, m);
+        //    rayTrace(reflected_ray, depth + 1, reflected_color, obj);
+        //    tmp_col.R += obj->alb.rg * curr_ls->col.R * reflected_color->R;
+        //    tmp_col.G += obj->alb.rg * curr_ls->col.G * reflected_color->G;
+        //    tmp_col.B += obj->alb.rg * curr_ls->col.B * reflected_color->B;
+        //    free(reflected_ray);
+        //    free(reflected_color);
+        //}
+        //tmp_col.R += R * tmp_col.R;
+        //tmp_col.G += G * tmp_col.G;
+        //tmp_col.B += B * tmp_col.B;
+        free(m);
+        free(camera_dir);
     }
-
-
-    // Global component
-    // if (depth < MAX_DEPTH) {
-    //   if (obj has specular)
-    // }
-    //   if (obj has refraction)
-    //      if (not fully refraction)
-    // Ig = Ise + Ire
-    // else Ig = 0
-    // tmp_col += Ig;
-
     /* Currently use this to generate signature. normal */
-    // tmp_col.R += obj->col.R * 1.0; //tmp_col.R += (n->px + 1)/2;
-    // tmp_col.G += obj->col.G * 1.0; //tmp_col.G += (n->py + 1)/2;
-    // tmp_col.B += obj->col.B * 1.0; //tmp_col.B += (n->pz + 1)/2;
+//     tmp_col.R += (n->px + 1)/2;
+//     tmp_col.G += (n->py + 1)/2;
+//     tmp_col.B += (n->pz + 1)/2;
     // Be sure to update 'col' with the final colour computed here!
+
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
     col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;

@@ -63,7 +63,7 @@
  invert(&o->T[0][0],&o->Tinv[0][0]);
  insertObject(o,&object_list);
 
- o=newPlane(.05,.75,.05,.05,.55,.8,.75,1,1,2);
+ o=newPlane(.05,.75,.95,.05,.55,.8,.75,1,1,2);
  Scale(o,11,11,11);
  RotateZ(o,PI/4);
  RotateX(o,PI/2);
