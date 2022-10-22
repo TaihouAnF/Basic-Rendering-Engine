@@ -459,11 +459,10 @@ int main(int argc, char *argv[])
             matVecMult(cam->C2W, &pc);
 
             // Getting direction vector in world coordinate by pc(World) - e(World)
-            d.px = pc.px - e.px;        // x of direction vector in World coordinate
-            d.py = pc.py - e.py;        // y of direction vector in World coordinate
-            d.pz = pc.pz - e.pz;        // z of direction vector in World coordinate
+            d = pc;
+            subVectors(&e, &d);
             d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
-            // and pc.pw - e.pw supposed to be 0
+                                        // and pc.pw - e.pw supposed to be 0
             // normalize it
             normalize(&d);
 
