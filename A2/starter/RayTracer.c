@@ -97,21 +97,18 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     //////////////////////////////////////////////////////////////
 
     // Local component, setting up a shadow ray
+    // and perfect reflection of LS, camera_dir
     struct pointLS *curr_ls = light_list;
     struct ray3D shadow_ray;
-    struct point3D* m = newPoint(n->px, n->py, n->pz);
+    struct point3D *m = newPoint(n->px, n->py, n->pz);
     struct point3D *camera_dir = newPoint(ray->p0.px, ray->p0.py, ray->p0.pz);
     subVectors(p, camera_dir);
-    //normalize(camera_dir);
+    normalize(camera_dir);
+    
     // Setting up shadow ray direction
     struct point3D shadow_direction = curr_ls->p0;
     // b = b - a, where a is p and b is shadow_direction
-    // we store curr_ls-p0 in shadow_direction first,
-    // we basically are doing these:
-    //  shadow_direction.px = curr_ls->p0.px - p->px;
-    //  shadow_direction.py = curr_ls->p0.py - p->py;
-    //  shadow_direction.pz = curr_ls->p0.pz - p->pz;
-    //  shadow_direction.pw = 0;
+    // we store curr_ls-p0 in shadow_direction first
     subVectors(p, &shadow_direction);
     shadow_direction.pw = 0;
 
@@ -128,7 +125,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        tmp_col.R += obj->alb.ra; // diffuse test
+        tmp_col.R += obj->alb.ra;
         tmp_col.G += obj->alb.ra;
         tmp_col.B += obj->alb.ra;
         m->px = -1;
@@ -138,23 +135,19 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
         if (obj->frontAndBack && dot_intensity_max < 0.0) {
-            struct point3D rev_normal;
-            rev_normal.px = -n->px;
-            rev_normal.py = -n->py;
-            rev_normal.pz = -n->pz;
-            rev_normal.pw = 1;
             m->px = -m->px;
             m->py = -m->py;
             m->pz = -m->pz;
-            dot_intensity_max = dot(&rev_normal, &shadow_direction);
+            dot_intensity_max = fabs(dot_intensity_max);
         }
         double coeff = max(0, 2 * dot_intensity_max);
         m->px = coeff * m->px;
         m->py = coeff * m->py;
         m->pz = coeff * m->pz;
         subVectors(&shadow_direction, m);
+        normalize(m);
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
-        // add the specular term
+        // Add all component in phong model
         tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
         tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
         tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
