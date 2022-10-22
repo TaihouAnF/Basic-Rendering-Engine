@@ -99,7 +99,10 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     // Local component, setting up a shadow ray
     struct pointLS *curr_ls = light_list;
     struct ray3D shadow_ray;
-
+    struct point3D* m = newPoint(n->px, n->py, n->pz);
+    struct point3D *camera_dir = newPoint(ray->p0.px, ray->p0.py, ray->p0.pz);
+    subVectors(p, camera_dir);
+    //normalize(camera_dir);
     // Setting up shadow ray direction
     struct point3D shadow_direction = curr_ls->p0;
     // b = b - a, where a is p and b is shadow_direction
@@ -125,15 +128,18 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        tmp_col.R += R * 0.1; // (obj->alb.ra); // diffuse test
-        tmp_col.G += G * 0.1; // (obj->alb.ra);
-        tmp_col.B += B * 0.1; // (obj->alb.ra);
-    }
-    else {
+        //tmp_col.R += 0.1; // (obj->alb.ra); // diffuse test
+        //tmp_col.G += 0.1; // (obj->alb.ra);
+        //tmp_col.B += 0.1; // (obj->alb.ra);
+        tmp_col.R = 0;
+        tmp_col.G = 0;
+        tmp_col.B = 0;
+        m->px = -1;
+        m->py = -1;
+        m->pz = -1;
+    } else {
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
-        struct point3D* m = newPoint(n->px, n->py, n->pz);
-        struct point3D* camera_dir = newPoint(-ray->d.px, -ray->d.py, -ray->d.pz);
         if (obj->frontAndBack && dot_intensity_max < 0.0) {
             struct point3D rev_normal;
             rev_normal.px = -n->px;
@@ -145,48 +151,39 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             m->pz = -m->pz;
             dot_intensity_max = dot(&rev_normal, &shadow_direction);
         }
-        if (dot_intensity_max < 0.0) {
-            tmp_col.R += 0.1;
-            tmp_col.G += 0.1;
-            tmp_col.B += 0.1;
-        } else {
-            double coeff = 2 * dot_intensity_max;
-            m->px = coeff * m->px;
-            m->py = coeff * m->py;
-            m->pz = coeff * m->pz;
-            subVectors(&shadow_direction, m);
-            double specular = max(0.0, pow(dot(camera_dir, m), obj->shinyness));
-            tmp_col.R += 0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
-            tmp_col.G += 0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
-            tmp_col.B += 0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
-        }
-        //if (depth < MAX_DEPTH) {
-        //    struct ray3D *reflected_ray;
-        //    struct colourRGB *reflected_color;
-        //    struct point3D * new_p = newPoint(p.px, p.py, p.pz);
-        //    initRay(reflected_ray, p, m);
-        //    rayTrace(reflected_ray, depth + 1, reflected_color, obj);
-        //    tmp_col.R += obj->alb.rg * curr_ls->col.R * reflected_color->R;
-        //    tmp_col.G += obj->alb.rg * curr_ls->col.G * reflected_color->G;
-        //    tmp_col.B += obj->alb.rg * curr_ls->col.B * reflected_color->B;
-        //    free(reflected_ray);
-        //    free(reflected_color);
-        //}
-        //tmp_col.R += R * tmp_col.R;
-        //tmp_col.G += G * tmp_col.G;
-        //tmp_col.B += B * tmp_col.B;
-        free(m);
-        free(camera_dir);
+        double coeff = max(0, 2 * dot_intensity_max);
+        m->px = coeff * m->px;
+        m->py = coeff * m->py;
+        m->pz = coeff * m->pz;
+        subVectors(&shadow_direction, m);
+        double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
+        // add the specular term
+        tmp_col.R += obj->alb.rs * curr_ls->col.R * specular;
+        tmp_col.G += obj->alb.rs * curr_ls->col.G * specular;
+        tmp_col.B += obj->alb.rs * curr_ls->col.B * specular;
+        tmp_col.R += 0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max));
+        tmp_col.G += 0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max));
+        tmp_col.B += 0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max));
     }
+    // Global component
+    // if (depth < MAX_DEPTH) {
+    //   if (obj has specular)
+    // }
+    //   if (obj has refraction)
+    //      if (not fully refraction)
+    // Ig = Ise + Ire
+    // else Ig = 0
+    // tmp_col += Ig;
     /* Currently use this to generate signature. normal */
-//     tmp_col.R += (n->px + 1)/2;
-//     tmp_col.G += (n->py + 1)/2;
-//     tmp_col.B += (n->pz + 1)/2;
     // Be sure to update 'col' with the final colour computed here!
-
+    tmp_col.R = R * tmp_col.R;
+    tmp_col.G = G * tmp_col.G;
+    tmp_col.B = B * tmp_col.B;
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
     col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
+    free(m);
+    free(camera_dir);
     return;
 }
 
@@ -211,26 +208,26 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     // reference of what to do in here. Done
     /////////////////////////////////////////////////////////////
 
-  *lambda = -1.0;
-  struct object3D *obj_head = object_list;
-  while (obj_head != NULL) {
-    // Check if current obj is the object source
-    if (obj_head != Os) {
-      
-      // Find intersection with current obj
-      double temp_lambda = -1.0;     // temp lambda to store the result
-      struct point3D temp_p;  // temp intersect point, only used when temp_lambda is valid
-      struct point3D temp_n;  // temp normal, same as above
-      double temp_a, temp_b;  // temp a and b, same as above
-      obj_head->intersect(obj_head, ray, &temp_lambda, &temp_p, &temp_n, &temp_a, &temp_b);
-      
-      // If current smallest lambda is small than 0 
-      // OR new lambda is smaller than current smallest.
-      // And the new lambda should be > 0
-      if ((*lambda < 0.0 || temp_lambda < *lambda) && temp_lambda > 0.0) {
-        
-        // Update lambda
-        *lambda = temp_lambda;
+    *lambda = -1.0;
+    struct object3D *obj_head = object_list;
+    while (obj_head != NULL) {
+        // Check if current obj is the object source
+        if (obj_head != Os) {
+
+            // Find intersection with current obj
+            double temp_lambda = -1.0;     // temp lambda to store the result
+            struct point3D temp_p;  // temp intersect point, only used when temp_lambda is valid
+            struct point3D temp_n;  // temp normal, same as above
+            double temp_a, temp_b;  // temp a and b, same as above
+            obj_head->intersect(obj_head, ray, &temp_lambda, &temp_p, &temp_n, &temp_a, &temp_b);
+
+            // If current smallest lambda is small than 0
+            // OR new lambda is smaller than current smallest.
+            // And the new lambda should be > 0
+            if ((*lambda < 0.0 || temp_lambda < *lambda) && temp_lambda > 0.0) {
+
+                // Update lambda
+                *lambda = temp_lambda;
 
                 // Update intersection point
                 p->px = temp_p.px;
@@ -248,12 +245,12 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
                 *a = temp_a;
                 *b = temp_b;
 
-        // Update the obj
-        *obj = obj_head;
-      }
+                // Update the obj
+                *obj = obj_head;
+            }
+        }
+        obj_head = obj_head->next;
     }
-    obj_head = obj_head->next;
-  }
 
 }
 
