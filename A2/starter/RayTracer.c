@@ -142,7 +142,6 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         subVectors(&shadow_direction, m);
         normalize(m);
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
-        // add the specular term
         struct ray3D reflection_ray;
         struct colourRGB reflection_col = {0, 0, 0};
         if (depth < MAX_DEPTH) {
