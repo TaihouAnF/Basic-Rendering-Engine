@@ -511,7 +511,7 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
 
  // Check cases
  if (temp_lambda_base > 0.0 && temp_lambda_cap > 0.0) {
-    if (temp_lambda_base >= temp_lambda_cap) {
+    if (temp_lambda_base <= temp_lambda_cap) {
       temp_small = temp_lambda_base;
       temp_large = temp_lambda_cap;
       cap = false;
