@@ -128,12 +128,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        //tmp_col.R += 0.1; // (obj->alb.ra); // diffuse test
-        //tmp_col.G += 0.1; // (obj->alb.ra);
-        //tmp_col.B += 0.1; // (obj->alb.ra);
-        tmp_col.R = 0;
-        tmp_col.G = 0;
-        tmp_col.B = 0;
+        tmp_col.R += obj->alb.ra; // diffuse test
+        tmp_col.G += obj->alb.ra;
+        tmp_col.B += obj->alb.ra;
         m->px = -1;
         m->py = -1;
         m->pz = -1;
@@ -158,12 +155,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         subVectors(&shadow_direction, m);
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
         // add the specular term
-        tmp_col.R += obj->alb.rs * curr_ls->col.R * specular;
-        tmp_col.G += obj->alb.rs * curr_ls->col.G * specular;
-        tmp_col.B += obj->alb.rs * curr_ls->col.B * specular;
-        tmp_col.R += 0.1 + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max));
-        tmp_col.G += 0.1 + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max));
-        tmp_col.B += 0.1 + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max));
+        tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
+        tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
+        tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
     }
     // Global component
     // if (depth < MAX_DEPTH) {
