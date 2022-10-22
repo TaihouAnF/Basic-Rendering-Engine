@@ -122,6 +122,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
+    // Create temp color for global component
+    struct colourRGB reflection_col;
+    reflection_col.R = 0.0;
+    reflection_col.G = 0.0;
+    reflection_col.B = 0.0;
+
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
         tmp_col.R += obj->alb.ra;
         tmp_col.G += obj->alb.ra;
@@ -129,12 +135,14 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     } else {
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
+        // Fixing plane normal points downward
         if (obj->frontAndBack && dot_intensity_max < 0.0) {
             m->px = -m->px;
             m->py = -m->py;
             m->pz = -m->pz;
             dot_intensity_max = fabs(dot_intensity_max);
         }
+
         double coeff = max(0, 2 * dot_intensity_max);
         m->px = coeff * m->px;
         m->py = coeff * m->py;
@@ -142,8 +150,13 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         subVectors(&shadow_direction, m);
         normalize(m);
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
+
+        // Add the phong model and finish local
+        tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
+        tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
+        tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
+
         struct ray3D reflection_ray;
-        struct colourRGB reflection_col = {0, 0, 0};
         if (depth < MAX_DEPTH) {
             struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
             double coeff = 2 * dot(n, camera_dir);
@@ -158,13 +171,18 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             free(reflection_direction);
             free(reflection_p);
         }
-        tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular + obj->alb.rs * reflection_col.R;;
-        tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular + obj->alb.rs * reflection_col.G;;
-        tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular + obj->alb.rs * reflection_col.B;;
     }
+
+    // First compute the local
     tmp_col.R = R * tmp_col.R;
     tmp_col.G = G * tmp_col.G;
     tmp_col.B = B * tmp_col.B;
+    // I = Il + Ig, Il could be only ambient or full phong model
+    tmp_col.R += obj->alb.rg * reflection_col.R;
+    tmp_col.G += obj->alb.rg * reflection_col.G;
+    tmp_col.B += obj->alb.rg * reflection_col.B;
+
+    // Update the final color of the pixel
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
     col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
