@@ -30,10 +30,10 @@
 *
 * 1) Student number:  1004721955
 * 2) Student number:  1004295693
-* 
+*
 * 1) UtorID:          fengdian
 * 2) UtorID:          choulu1
-* 
+*
 * We hereby certify that the work contained here is our own
 *
 * _______Anson Feng___             _____Peter Chou_____
@@ -146,18 +146,18 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         struct ray3D reflection_ray;
         struct colourRGB reflection_col = {0, 0, 0};
         if (depth < MAX_DEPTH) {
-          struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
-          double coeff = 2 * dot(n, camera_dir);
-          reflection_direction->px = coeff * reflection_direction->px;
-          reflection_direction->py = coeff * reflection_direction->py;
-          reflection_direction->pz = coeff * reflection_direction->pz;
-          subVectors(camera_dir, reflection_direction);
-          normalize(reflection_direction);
-          struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
-          initRay(&reflection_ray, reflection_p, reflection_direction);
-          rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
-          free(reflection_direction);
-          free(reflection_p);
+            struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
+            double coeff = 2 * dot(n, camera_dir);
+            reflection_direction->px = coeff * reflection_direction->px;
+            reflection_direction->py = coeff * reflection_direction->py;
+            reflection_direction->pz = coeff * reflection_direction->pz;
+            subVectors(camera_dir, reflection_direction);
+            normalize(reflection_direction);
+            struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
+            initRay(&reflection_ray, reflection_p, reflection_direction);
+            rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+            free(reflection_direction);
+            free(reflection_p);
         }
         tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular + obj->alb.rs * reflection_col.R;;
         tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular + obj->alb.rs * reflection_col.G;;
@@ -276,19 +276,22 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
     findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
 
     if (lambda > 0) {
+
         // Shading to obtain the color
         rtShade(obj, &p, &n, ray, depth, a, b, &I);
+
         // Update the color
         col->R = I.R;
         col->G = I.G;
         col->B = I.B;
-    } else {
-        col->R = 0;
-        col->G = 0;
-        col->B = 0;
     }
         // if lambda <=0, col = background/originate obj,
         // as we set before passing in rayTrace()
+    else {
+        col->R = col->R;
+        col->G = col->G;
+        col->B = col->B;
+    }
 
 }
 
@@ -456,9 +459,8 @@ int main(int argc, char *argv[])
             matVecMult(cam->C2W, &pc);
 
             // Getting direction vector in world coordinate by pc(World) - e(World)
-            d.px = pc.px - e.px;        // x of direction vector in World coordinate
-            d.py = pc.py - e.py;        // y of direction vector in World coordinate
-            d.pz = pc.pz - e.pz;        // z of direction vector in World coordinate
+            d = pc;
+            subVectors(&e, &d);
             d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
             // and pc.pw - e.pw supposed to be 0
             // normalize it
