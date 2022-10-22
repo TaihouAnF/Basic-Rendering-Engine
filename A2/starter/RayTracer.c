@@ -129,9 +129,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     reflection_col.B = 0.0;
 
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        tmp_col.R += obj->alb.ra;
-        tmp_col.G += obj->alb.ra;
-        tmp_col.B += obj->alb.ra;
+        tmp_col.R += R * obj->alb.ra;
+        tmp_col.G += G * obj->alb.ra;
+        tmp_col.B += B * obj->alb.ra;
     } else {
         normalize(&shadow_direction);
         double dot_intensity_max = dot(n, &shadow_direction);
@@ -152,9 +152,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         double specular =  pow(max(0.0, dot(camera_dir, m)), obj->shinyness);
 
         // Add the phong model and finish local
-        tmp_col.R += obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.R * specular;
-        tmp_col.G += obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.G * specular;
-        tmp_col.B += obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)) + obj->alb.rs * curr_ls->col.B * specular;
+        tmp_col.R += R * (obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, dot_intensity_max)))
+                     + obj->alb.rs * curr_ls->col.R * specular;
+        tmp_col.G += G * (obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, dot_intensity_max)))
+                     + obj->alb.rs * curr_ls->col.G * specular;
+        tmp_col.B += B * (obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)))
+                     + obj->alb.rs * curr_ls->col.B * specular;
 
         struct ray3D reflection_ray;
         if (depth < MAX_DEPTH) {
@@ -173,10 +176,6 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         }
     }
 
-    // First compute the local
-    tmp_col.R = R * tmp_col.R;
-    tmp_col.G = G * tmp_col.G;
-    tmp_col.B = B * tmp_col.B;
     // I = Il + Ig, Il could be only ambient or full phong model
     tmp_col.R += obj->alb.rg * reflection_col.R;
     tmp_col.G += obj->alb.rg * reflection_col.G;
