@@ -161,18 +161,20 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         
         struct ray3D reflection_ray;
         if (depth < MAX_DEPTH) {
-            struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
-            double coeff = 2 * dot(n, camera_dir);
-            reflection_direction->px = coeff * reflection_direction->px;
-            reflection_direction->py = coeff * reflection_direction->py;
-            reflection_direction->pz = coeff * reflection_direction->pz;
-            subVectors(camera_dir, reflection_direction);
-            normalize(reflection_direction);
-            struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
-            initRay(&reflection_ray, reflection_p, reflection_direction);
-            rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
-            free(reflection_direction);
-            free(reflection_p);
+            if (obj->alb.rs > 0) {
+                struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
+                double coeff = 2 * dot(n, camera_dir);
+                reflection_direction->px = coeff * reflection_direction->px;
+                reflection_direction->py = coeff * reflection_direction->py;
+                reflection_direction->pz = coeff * reflection_direction->pz;
+                subVectors(camera_dir, reflection_direction);
+                normalize(reflection_direction);
+                struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
+                initRay(&reflection_ray, reflection_p, reflection_direction);
+                rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+                free(reflection_direction);
+                free(reflection_p);
+            }  
         }
     }
 
