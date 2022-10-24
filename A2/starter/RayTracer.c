@@ -128,6 +128,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     reflection_col.G = 0.0;
     reflection_col.B = 0.0;
 
+    // Local
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
         tmp_col.R += R * obj->alb.ra;
         tmp_col.G += G * obj->alb.ra;
@@ -158,24 +159,25 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                         + obj->alb.rs * curr_ls->col.G * specular;
         tmp_col.B += B * (obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)))
                         + obj->alb.rs * curr_ls->col.B * specular;
-        
-        struct ray3D reflection_ray;
-        if (depth < MAX_DEPTH) {
-            if (obj->alb.rs > 0) {
-                struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
-                double coeff = 2 * dot(n, camera_dir);
-                reflection_direction->px = coeff * reflection_direction->px;
-                reflection_direction->py = coeff * reflection_direction->py;
-                reflection_direction->pz = coeff * reflection_direction->pz;
-                subVectors(camera_dir, reflection_direction);
-                normalize(reflection_direction);
-                struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
-                initRay(&reflection_ray, reflection_p, reflection_direction);
-                rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
-                free(reflection_direction);
-                free(reflection_p);
-            }  
-        }
+    }
+
+    // Global
+    struct ray3D reflection_ray;
+    if (depth < MAX_DEPTH) {
+        if (obj->alb.rs > 0) {
+            struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
+            double coeff = 2 * dot(n, camera_dir);
+            reflection_direction->px = coeff * reflection_direction->px;
+            reflection_direction->py = coeff * reflection_direction->py;
+            reflection_direction->pz = coeff * reflection_direction->pz;
+            subVectors(camera_dir, reflection_direction);
+            normalize(reflection_direction);
+            struct point3D *reflection_p = newPoint(p->px, p->py, p->pz);
+            initRay(&reflection_ray, reflection_p, reflection_direction);
+            rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+            free(reflection_direction);
+            free(reflection_p);
+        }  
     }
 
     // I = Il + Ig, Il could be only ambient or full phong model
