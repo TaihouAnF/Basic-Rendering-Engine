@@ -1,2 +1,2 @@
 #!/bin/sh
-g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o0 RayTracer
+g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
