@@ -4,7 +4,7 @@
 .idea/**
 .idea/
 ../**
-RayTracer
+backup/RayTracer
 MyRender.ppm
 CMakeLists.txt
 cmake-build-debug
