@@ -1,24 +1,19 @@
 /*
   CSC D18 - RayTracer code.
-
   Written Dec. 9 2010 - Jan 20, 2011 by F. J. Estrada
   Freely distributable for adacemic purposes only.
-
   Uses Tom F. El-Maraghi's code for computing inverse
   matrices. You will need to compile together with
   svdDynamic.c
-
   You need to understand the code provided in
   this file, the corresponding header file, and the
   utils.c and utils.h files. Do not worry about
   svdDynamic.c, we need it only to compute
   inverse matrices.
-
   You only need to modify or add code in sections
   clearly marked "TO DO" - remember to check what
   functionality is actually needed for the corresponding
   assignment!
-
   Last updated: Aug. 2017   - F.J.E.
 */
 
@@ -128,6 +123,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     reflection_col.G = 0.0;
     reflection_col.B = 0.0;
 
+    // Local
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
         tmp_col.R += R * obj->alb.ra;
         tmp_col.G += G * obj->alb.ra;
@@ -158,9 +154,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                      + obj->alb.rs * curr_ls->col.G * specular;
         tmp_col.B += B * (obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, dot_intensity_max)))
                      + obj->alb.rs * curr_ls->col.B * specular;
+    }
 
-        struct ray3D reflection_ray;
-        if (depth < MAX_DEPTH) {
+    // Global
+    struct ray3D reflection_ray;
+    if (depth < MAX_DEPTH) {
+        if (obj->alb.rs > 0) {
             struct point3D *reflection_direction = newPoint(n->px, n->py, n->pz);
             double coeff = 2 * dot(n, camera_dir);
             reflection_direction->px = coeff * reflection_direction->px;
