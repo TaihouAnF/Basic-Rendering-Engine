@@ -1,0 +1,5 @@
+% To run testing for "antialiasing": use: 
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+% to compile, and use CMD call:
+ 	./Raytracer 1024 10 1 test_antialiasing.ppm
+% Currently we're using buildscene from A2
