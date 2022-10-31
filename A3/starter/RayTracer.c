@@ -470,40 +470,81 @@ int main(int argc, char *argv[])
             // TO DO - complete the code that should be in this loop to do the
             //         raytracing! Done
             ///////////////////////////////////////////////////////////////////
+            if (antialiasing) {
+                // Initialize a color for summing all four location
+                // and a temp color container TODOs: need checking
+                struct colourRGB sum_color, temp_color;
+                sum_color.R = 0;
+                sum_color.G = 0;
+                sum_color.B = 0;
+                temp_color.R = background.R;
+                temp_color.G = background.G;
+                temp_color.B = background.B;
 
-            // Setting up the point on the image plane in camera coordinate
-            pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
-            pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
-            pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
-            pc.pw = 1;                  // homogeneous point so the w is 1
+                for (double sub_i = .25; sub_i <= .75; sub_i += .5) {
+                    for (double sub_j = .25; sub_j <= .75; sub_j += .5) {
+                        // cam->wl+(i*du) and cam->wt+(j*dv) 
+                        // is the x and y of the center of pixel; while
+                        // ((sub_i-.5)*du) and ((sub_j-.5)*dv) are offset
+                        pc.px = cam->wl + (i * du) + ((sub_i - 0.5) * du);
+                        pc.py = cam->wt + (j * dv) + ((sub_j - 0.5) * dv);
+                        pc.pz = -1;
+                        pc.pw = 1;
+                        matVecMult(cam->C2W, &pc);
+                        
+                        d = pc;
+                        subVectors(&e, &d);
+                        d.pw = 0;
+                        normalize(&d);
+                        
+                        initRay(&ray, &pc, &d);
+                        rayTrace(&ray, 1, &temp_color, NULL);
+                        
+                        sum_color.R += temp_color.R;
+                        sum_color.G += temp_color.G;
+                        sum_color.B += temp_color.B;
+                    }
+                }
+                // Update the col, so that we can return
+                col.R = sum_color.R / 4;
+                col.G = sum_color.G / 4;
+                col.B = sum_color.B / 4;
+            }
+            else {
+                // Setting up the point on the image plane in camera coordinate
+                pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
+                pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
+                pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
+                pc.pw = 1;                  // homogeneous point so the w is 1
 
-            // Convert the point to the World coordinate and pc.pw is still 1,
-            // check C2W and matVecMult to convince
-            matVecMult(cam->C2W, &pc);
+                // Convert the point to the World coordinate and pc.pw is still 1,
+                // check C2W and matVecMult to convince
+                matVecMult(cam->C2W, &pc);
 
-            // Getting direction vector in world coordinate by pc(World) - e(World)
-            d = pc;
-            subVectors(&e, &d);
-            d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
-            // and pc.pw - e.pw supposed to be 0
-            // normalize it
-            normalize(&d);
+                // Getting direction vector in world coordinate by pc(World) - e(World)
+                d = pc;
+                subVectors(&e, &d);
+                d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
+                // and pc.pw - e.pw supposed to be 0
+                // normalize it
+                normalize(&d);
 
-            // Create the ray
-            initRay(&ray, &pc, &d);
+                // Create the ray
+                initRay(&ray, &pc, &d);
 
-            // Initialize the color, we might use it to handle
-            // rayTrace has a negative lambda and we need to set
-            // the color to background.
-            col.R = background.R;
-            col.G = background.G;
-            col.B = background.B;
+                // Initialize the color, we might use it to handle
+                // rayTrace has a negative lambda and we need to set
+                // the color to background.
+                col.R = background.R;
+                col.G = background.G;
+                col.B = background.B;
 
-            // Trace the ray to get the color, if lambda > 0, color will be changed
-            rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
+                // Trace the ray to get the color, if lambda > 0, color will be changed
+                rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
+            }
 
             /*
-            *   Set pixel color, TODO: needs double check:
+            *   Set pixel color:
             *   We can see rgbIm as a flatten version of the image plane,
             *   we have sx columns and sy rows, as i represents column and j rows,
             *   we put all the indices into one row =>
