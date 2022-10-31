@@ -292,8 +292,16 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
 
     if (lambda > 0) {
 
-        // Shading to obtain the color
-        rtShade(obj, &p, &n, ray, depth, a, b, &I);
+        // If the obj the ray intersected is the areaLS
+        // it should just return the color of LS. Needs checking
+        if (obj->isLightSource) {
+            I.R = obj->col.R;
+            I.G = obj->col.G;
+            I.B = obj->col.B;
+        }
+        else { // Shading to obtain the color
+            rtShade(obj, &p, &n, ray, depth, a, b, &I);
+        }
 
         // Update the color
         col->R = I.R;
