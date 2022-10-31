@@ -173,6 +173,11 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             free(reflection_direction);
             free(reflection_p);
         }
+
+        // refraction
+        if (obj->alpha < 1) {
+
+        }
     }
 
     // I = Il + Ig, Il could be only ambient or full phong model
@@ -336,6 +341,8 @@ int main(int argc, char *argv[])
     // the direction or a ray
     struct ray3D ray;		// Structure to keep the ray from e to a pixel
     struct colourRGB col;		// Return colour for raytraced pixels
+    struct colourRGB sum_color;  // Summary of color when antialiasing
+    struct colourRGB temp_color; // Container to store temp RGB when antialising
     struct colourRGB background;   // Background colour
     int i,j;			// Counters for pixel coordinates
     unsigned char *rgbIm;
@@ -471,15 +478,11 @@ int main(int argc, char *argv[])
             //         raytracing! Done
             ///////////////////////////////////////////////////////////////////
             if (antialiasing) {
-                // Initialize a color for summing all four location
+                // Initialize the sum color for summing all four location
                 // and a temp color container TODOs: need checking
-                struct colourRGB sum_color, temp_color;
                 sum_color.R = 0;
                 sum_color.G = 0;
                 sum_color.B = 0;
-                temp_color.R = background.R;
-                temp_color.G = background.G;
-                temp_color.B = background.B;
 
                 for (double sub_i = .25; sub_i <= .75; sub_i += .5) {
                     for (double sub_j = .25; sub_j <= .75; sub_j += .5) {
@@ -498,6 +501,9 @@ int main(int argc, char *argv[])
                         normalize(&d);
                         
                         initRay(&ray, &pc, &d);
+                        temp_color.R = background.R;
+                        temp_color.G = background.G;
+                        temp_color.B = background.B;
                         rayTrace(&ray, 1, &temp_color, NULL);
                         
                         sum_color.R += temp_color.R;
@@ -505,42 +511,43 @@ int main(int argc, char *argv[])
                         sum_color.B += temp_color.B;
                     }
                 }
-                // Update the col, so that we can return
-                col.R = sum_color.R / 4;
-                col.G = sum_color.G / 4;
-                col.B = sum_color.B / 4;
             }
-            else {
-                // Setting up the point on the image plane in camera coordinate
-                pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
-                pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
-                pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
-                pc.pw = 1;                  // homogeneous point so the w is 1
+            
+            // Setting up the point on the image plane in camera coordinate
+            pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
+            pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
+            pc.pz = -1;                 // w, focal length, the z distance from eye point to plane
+            pc.pw = 1;                  // homogeneous point so the w is 1
 
-                // Convert the point to the World coordinate and pc.pw is still 1,
-                // check C2W and matVecMult to convince
-                matVecMult(cam->C2W, &pc);
+            // Convert the point to the World coordinate and pc.pw is still 1,
+            // check C2W and matVecMult to convince
+            matVecMult(cam->C2W, &pc);
 
-                // Getting direction vector in world coordinate by pc(World) - e(World)
-                d = pc;
-                subVectors(&e, &d);
-                d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
-                // and pc.pw - e.pw supposed to be 0
-                // normalize it
-                normalize(&d);
+            // Getting direction vector in world coordinate by pc(World) - e(World)
+            d = pc;
+            subVectors(&e, &d);
+            d.pw = 0;                   // Homogeneous, vector as 0, otherwise it's incorrect
+            // and pc.pw - e.pw supposed to be 0
+            // normalize it
+            normalize(&d);
 
-                // Create the ray
-                initRay(&ray, &pc, &d);
+            // Create the ray
+            initRay(&ray, &pc, &d);
 
-                // Initialize the color, we might use it to handle
-                // rayTrace has a negative lambda and we need to set
-                // the color to background.
-                col.R = background.R;
-                col.G = background.G;
-                col.B = background.B;
+            // Initialize the color, we might use it to handle
+            // rayTrace has a negative lambda and we need to set
+            // the color to background.
+            col.R = background.R;
+            col.G = background.G;
+            col.B = background.B;
 
-                // Trace the ray to get the color, if lambda > 0, color will be changed
-                rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
+            // Trace the ray to get the color, if lambda > 0, color will be changed
+            rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
+            
+            if (antialiasing) {
+                col.R = (col.R + sum_color.R) / 5;
+                col.G = (col.G + sum_color.G) / 5;
+                col.B = (col.B + sum_color.B) / 5;
             }
 
             /*
