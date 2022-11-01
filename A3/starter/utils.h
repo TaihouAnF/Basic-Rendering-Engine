@@ -168,6 +168,41 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
  memcpy(&ray->p0,p0,sizeof(struct point3D));
  memcpy(&ray->d,d,sizeof(struct point3D));
  ray->rayPos=&rayPosition;
+ ray->ref_ind_stack = NULL;
+}
+
+// Refraction index stack inlines
+inline struct refIndexStk *newStackEntry(double leaving_index, double entering_index) {
+	struct refIndexStk *newEntry = (struct refIndexStk *)malloc(1, sizeof(struct refIndexStk));
+	newEntry->entering_index = entering_index;
+	newEntry->leaving_index = leaving_index;
+	newEntry->next = NULL;
+	return newEntry;
+}
+
+inline void stackInsert(struct refIndexStk *newStack, struct refIndexStk *stack) {
+  if (!stack) stack = newStack;
+  newStack->next = stack;
+  stack = newStack;
+  return;
+}
+
+inline void stackPop(struct refIndexStk *stack, double *leaving_index, double *entering_index) {
+  struct refIndexStk *stack_top = stack;
+  *leaving_index = stack_top->leaving_index;
+	*entering_index = stack_top->entering_index;
+  stack = stack->next;
+  free(stack_top);
+  return;
+}
+
+inline void freeStack(struct refIndexStk *stack) {
+  while (stack != NULL) {
+    struct refIndexStk *temp_stack = stack;
+    stack = stack->next;
+    free(temp_stack);
+  }
+  return;
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects

@@ -118,10 +118,14 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
     // Create temp color for global component
-    struct colourRGB reflection_col;
+    struct colourRGB reflection_col, refraction_col;
     reflection_col.R = 0.0;
     reflection_col.G = 0.0;
     reflection_col.B = 0.0;
+    
+    refraction_col.R = 0.0;
+    refraction_col.G = 0.0;
+    refraction_col.B = 0.0;
 
     // Local
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
@@ -176,7 +180,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
 
         // refraction
         if (obj->alpha < 1) {
-
+            // Calculate the refraction direction
+            // dt = rb + (rc - sqrt(1 - r^2*(1 - c^2)))n
+            // where b is direction of incident ray; 
+            // c = -n dot b and r = c2/c1 = n1/n2, n1 is ind of leaving material
+            // n2 is ind of entering material
+            // (1 - obj->alpha) * rt * It
         }
     }
 

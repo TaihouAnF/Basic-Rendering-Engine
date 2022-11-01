@@ -54,6 +54,14 @@ struct point3D{
 	double pw;
 };
 
+/* The structure below defines a stack for recording refraction index for nested
+   refraction. */
+struct refIndexStk {
+	double entering_index;	// Current index, it's the index of ray is going in
+	double leaving_index;  // previous index, it's the index of ray is leaving
+	struct refIndexStk *next;
+};
+
 /* The structure below defines a ray in 3D homogeneous coordinates,
    the point corresponds to the representation r(\lambda)=p+(\lambda)d */
 struct ray3D{
@@ -68,6 +76,7 @@ struct ray3D{
 	/* with this ray when implementing advanced raytracing features */
 
 	// TODOs: add stack here to keep track of refractive
+	struct refIndexStk *ref_ind_stack;
 };
 
 /*
