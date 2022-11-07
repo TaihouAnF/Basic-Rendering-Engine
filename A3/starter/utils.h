@@ -169,13 +169,14 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
  memcpy(&ray->d,d,sizeof(struct point3D));
  ray->rayPos=&rayPosition;
  ray->ref_ind_stack = NULL;
+//  struct refIndexStk newStk = newStackEntry(1.0);
+//  stackInsert(&newStk, ray->ref_ind_stack);
 }
 
 // Refraction index stack inlines
-inline struct refIndexStk *newStackEntry(double leaving_index, double entering_index) {
-	struct refIndexStk *newEntry = (struct refIndexStk *)malloc(1, sizeof(struct refIndexStk));
-	newEntry->entering_index = entering_index;
-	newEntry->leaving_index = leaving_index;
+inline struct refIndexStk *newStackEntry(double entering_index) {
+	struct refIndexStk *newEntry = (struct refIndexStk *)malloc(1 * sizeof(struct refIndexStk));
+	newEntry->current_index = entering_index;
 	newEntry->next = NULL;
 	return newEntry;
 }
@@ -187,10 +188,9 @@ inline void stackInsert(struct refIndexStk *newStack, struct refIndexStk *stack)
   return;
 }
 
-inline void stackPop(struct refIndexStk *stack, double *leaving_index, double *entering_index) {
+inline void stackPop(struct refIndexStk *stack, double *leaving_index) {
   struct refIndexStk *stack_top = stack;
-  *leaving_index = stack_top->leaving_index;
-	*entering_index = stack_top->entering_index;
+	*leaving_index = stack_top->current_index;
   stack = stack->next;
   free(stack_top);
   return;
@@ -228,6 +228,7 @@ void cylSample(struct object3D *plane, double *x, double *y, double *z);
 void planeIntersect(struct object3D *plane, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 void sphereIntersect(struct object3D *sphere, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
+void rayMarching(struct object3D *implicit_surf, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 
 // Functions to texture-map objects
 // You will need to add code for these if you implement texture mapping.

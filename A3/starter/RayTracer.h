@@ -57,8 +57,7 @@ struct point3D{
 /* The structure below defines a stack for recording refraction index for nested
    refraction. */
 struct refIndexStk {
-	double entering_index;	// Current index, it's the index of ray is going in
-	double leaving_index;  // previous index, it's the index of ray is leaving
+	double current_index;	// Current index, it's the index of ray is going in
 	struct refIndexStk *next;
 };
 
