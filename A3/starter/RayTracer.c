@@ -117,6 +117,8 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
+
+
     // Create temp color for global component
     struct colourRGB reflection_col;
     reflection_col.R = 0.0;

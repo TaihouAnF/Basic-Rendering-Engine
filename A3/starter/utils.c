@@ -334,6 +334,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  struct point3D *temp_plane_normal;
  temp_plane_normal = newPoint(0, 0, 1);
 
+
  // Subtract vector/points
  subVectors(&(deformed_ray.p0), temp_plane_point);
 
@@ -357,10 +358,8 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
     deformed_ray.rayPos(&deformed_ray, temp_intersect_lambda, &temp_intersect_point);
     if (temp_intersect_point.px > -1.0 && temp_intersect_point.px < 1.0 && 
         temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0) {
-          
           // Update lambda 
           *lambda = temp_intersect_lambda;
-
           // obtain the intersect point
           struct point3D temp_intersect_point_transform;
           ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
@@ -371,9 +370,8 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
           struct point3D temp_plane_normal_transform;
           normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
           *n = temp_plane_normal_transform;
-          // Change a and b, might change in future assignment
-          *a = *a;
-          *b = *b;
+          *a = (temp_intersect_point.px + 1.0) / 2.0;
+          *b = (temp_intersect_point.py + 1.0) / 2.0;
     }
   }
  }
@@ -381,7 +379,6 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  // free allocated temp point/normal, as we used newPoint()
  free(temp_plane_point);
  free(temp_plane_normal);
-
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -437,10 +434,9 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
   struct point3D temp_sphere_normal_transform;
   normalTransform(&temp_sphere_normal, &temp_sphere_normal_transform, sphere);
   *n = temp_sphere_normal_transform;
-
   // Update a and b
-  *a = *a;
-  *b = *b;
+  *a = 0.5 + asin(temp_sphere_normal.py) / PI;
+  *b = 0.5 + atan2(temp_sphere_normal.px, temp_sphere_normal.pz) / (2 * PI);
  }
 }
 
@@ -564,7 +560,6 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
  // normal might have different cases(cap/base v.s. wall)
  if ((lambda_wall > lambda_cap_base && lambda_cap_base > 0.0) ||
      (lambda_cap_base > 0.0 && lambda_wall < 0.0)) {
-  
   // Update lambda
   *lambda = lambda_cap_base;
 
@@ -584,10 +579,8 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
   struct point3D temp_nor_transfrom;
   normalTransform(temp_cylinder_cap_normal, &temp_nor_transfrom, cylinder);
   *n = temp_nor_transfrom;
-
-  *a = *a;
-  *b = *b;
-  
+  *a = (atan2(temp_cylinder_point_cap.px, temp_cylinder_point_cap.py) / (2 * PI)) + 0.5;
+  *b = fabs(temp_cylinder_point_cap.pz);
   free(temp_cylinder_cap_normal);
  }
  else if ((lambda_cap_base >= lambda_wall && lambda_wall > 0.0) ||
@@ -609,9 +602,8 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
   struct point3D temp_nor_transform;
   normalTransform(&temp_cylinder_wall_normal, &temp_nor_transform, cylinder);
   *n = temp_nor_transform;
-
-  *a = *a;
-  *b = *b;
+  *a = (atan2(temp_cylinder_point_wall.px, temp_cylinder_point_wall.py) / (2 * PI)) + 0.5;
+  *b = fabs(temp_cylinder_point_wall.pz);
  }
  else {
   return;
@@ -629,7 +621,9 @@ void planeCoordinates(struct object3D *plane, double a, double b, double *x, dou
  
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+
+
 }
 
 void sphereCoordinates(struct object3D *sphere, double a, double b, double *x, double *y, double *z)
@@ -773,10 +767,12 @@ void texMap(struct image *img, double a, double b, double *R, double *G, double 
  // coordinates. Your code should use bi-linear
  // interpolation to obtain the texture colour.
  //////////////////////////////////////////////////
-
- *(R)=0;	// Returns black - delete this and
- *(G)=0;	// replace with your code to compute
- *(B)=0;	// texture colour at (a,b)
+ int x = (int) (a * (img->sx - 1));
+ int y = (int) (b * (img->sy - 1));
+ double* rgbdata = (double *) img->rgbdata;
+ *(R) = (double) *(rgbdata + ((y * img->sx) + x) * 3);
+ *(G) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 1);
+ *(B) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 2);
  return;
 }
 
