@@ -1,14 +1,14 @@
 /*
   RayTracer header file. Structure and data definitions.
   Created: Dec. 9, 2010		- F.J.E.
-  
+
   For Assignment 2 you DO NOT need to modify this file, but you must read and
-  understand all the data structures and functions defined here. 
-  
+  understand all the data structures and functions defined here.
+
   For Assignment 3 you are allowed to change the data structures to add any
   data/methods needed to implement your advanced raytracer. You may also
   change the function prototypes as needed.
-  
+
   Last update: Aug. 2017   - F.J.E.
 */
 
@@ -30,9 +30,9 @@
 /* 3-layer images (your raytraced scene, texture and normal maps) as well   */
 /* as 1-layer images (alpha maps)					      */
 struct image{
-	void *rgbdata;
-	int sx;
-	int sy;
+    void *rgbdata;
+    int sx;
+    int sy;
 };
 
 /* The structure below is used to hold 1 image that will be used as either  */
@@ -40,34 +40,42 @@ struct image{
 /* texture data separately from objects and avoid duplication when multiple */
 /* objects share the same texture/normal/alpha maps                         */
 struct textureNode{
-	char name[1024];
-	int type;
-	struct image *im;
-	struct textureNode *next;
+    char name[1024];
+    int type;
+    struct image *im;
+    struct textureNode *next;
 };
 
 /* The structure below defines a point in 3D homogeneous coordinates        */
 struct point3D{
-	double px;
-	double py;
-	double pz;
-	double pw;
+    double px;
+    double py;
+    double pz;
+    double pw;
+};
+
+/* The structure below defines a stack for recording refraction index for nested
+   refraction. */
+struct refIndexStk {
+    double current_index;	// Current index, it's the index of ray is going in
+    struct refIndexStk *next;
 };
 
 /* The structure below defines a ray in 3D homogeneous coordinates,
    the point corresponds to the representation r(\lambda)=p+(\lambda)d */
 struct ray3D{
-	struct point3D p0;	// Ray origin (at lambda=0)
-	struct point3D d;		// Ray direction
-	void (*rayPos)(struct ray3D *ray, double lambda, struct point3D *pos);
-					// Function to return the
-					// position along the ray
-					// for a given lambda.
+    struct point3D p0;	// Ray origin (at lambda=0)
+    struct point3D d;		// Ray direction
+    void (*rayPos)(struct ray3D *ray, double lambda, struct point3D *pos);
+    // Function to return the
+    // position along the ray
+    // for a given lambda.
 
-	/* You may add data here to keep track of any values associated */
-	/* with this ray when implementing advanced raytracing features */
+    /* You may add data here to keep track of any values associated */
+    /* with this ray when implementing advanced raytracing features */
 
-	// TODOs: add stack here to keep track of refractive
+    // TODOs: add stack here to keep track of refractive
+    struct refIndexStk *ref_ind_stack;
 };
 
 /*
@@ -82,10 +90,10 @@ struct ray3D{
    you want your object to look before you set these values.
 */
 struct albedosPhong{
-	double ra;	// Ambient light albedo
-	double rd;	// Diffuse component albedo
-	double rs;	// Specular component albedo
-	double rg;	// Global component albedo
+    double ra;	// Ambient light albedo
+    double rd;	// Diffuse component albedo
+    double rs;	// Specular component albedo
+    double rg;	// Global component albedo
 };
 
 /*
@@ -93,9 +101,9 @@ struct albedosPhong{
    in [0,1]
 */
 struct colourRGB{
-	double R;
-	double G;
-	double B;
+    double R;
+    double G;
+    double B;
 };
 
 /*
@@ -115,23 +123,23 @@ struct colourRGB{
    intersection function. The rest stays the same.
 */
 struct object3D{
-	struct albedosPhong alb;	// Object's albedos for Phong model
-	struct colourRGB col;		// Object's colour in RGB
-	double  T[4][4]; 		// T holds the transformation applied to this object.
-	double  Tinv[4][4];      	// Tinv holds the inverse transformation
+    struct albedosPhong alb;	// Object's albedos for Phong model
+    struct colourRGB col;		// Object's colour in RGB
+    double  T[4][4]; 		// T holds the transformation applied to this object.
+    double  Tinv[4][4];      	// Tinv holds the inverse transformation
 
-        // Below we set up space for a pointer to the intersection function for this object.
-        // Note that the intersection function must compute the lambda at the intersection, the
-        // intersection point p, the normal at that point n, and the texture coordinates (a,b).
-        // The texture coordinates are not used unless texImg!=NULL and a textureMap function
-        // has been provided
-	void (*intersect)(struct object3D *obj, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);		
+    // Below we set up space for a pointer to the intersection function for this object.
+    // Note that the intersection function must compute the lambda at the intersection, the
+    // intersection point p, the normal at that point n, and the texture coordinates (a,b).
+    // The texture coordinates are not used unless texImg!=NULL and a textureMap function
+    // has been provided
+    void (*intersect)(struct object3D *obj, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 
-	// Texture mapping function. Takes normalized texture coordinates (a,b) and returns the
-  	// texture colour at that point using bi-linear interpolation 
-	void (*textureMap)(struct image *img, double a, double b, double *R, double *G, double *B);
+    // Texture mapping function. Takes normalized texture coordinates (a,b) and returns the
+    // texture colour at that point using bi-linear interpolation
+    void (*textureMap)(struct image *img, double a, double b, double *R, double *G, double *B);
 
-	// Functions to return coordinates on the surface of the object. One takes as input the a and b
+    // Functions to return coordinates on the surface of the object. One takes as input the a and b
     // parameters for the parametric function of the object and returns the (x,y,z) coordinates
     // on the object surface. The second returns a uniformly random-sampled point on the surface.
     // These are needed for Photon Mapping.
@@ -140,35 +148,35 @@ struct object3D{
 
     struct image *texImg;				// Pointer to structure holding the texture for this object
     struct image *photonMap;			// Photon map for this object
-	struct image *normalMap;			// Normal map for this object
-	struct image *alphaMap;				// Alpha map for the object
+    struct image *normalMap;			// Normal map for this object
+    struct image *alphaMap;				// Alpha map for the object
 
 
-	// Material properties
-	double  alpha;			// Opacity - if less than 1 this is a semi transparent object and refraction rays
-					// should be implemented
-	double  r_index;		// Index of refraction
+    // Material properties
+    double  alpha;			// Opacity - if less than 1 this is a semi transparent object and refraction rays
+    // should be implemented
+    double  r_index;		// Index of refraction
     double  shinyness;		// Exponent for the Phong specular component
-	int 	frontAndBack;		// Flag to indicate that both sides of the object
-					// should be lit.
-	int	isLightSource;		// Flag to indicate if this is an area light source
-	int isCSG;			// Object is part of a CSG composite object. Links to components via CSGnext
-	int photonMapped;		// This object accumulates photons under photon mapping
-	int normalMapped;		// This object has an associated normal map
-	int alphaMapped;		// This object has an associated alpha map
+    int 	frontAndBack;		// Flag to indicate that both sides of the object
+    // should be lit.
+    int	isLightSource;		// Flag to indicate if this is an area light source
+    int isCSG;			// Object is part of a CSG composite object. Links to components via CSGnext
+    int photonMapped;		// This object accumulates photons under photon mapping
+    int normalMapped;		// This object has an associated normal map
+    int alphaMapped;		// This object has an associated alpha map
 
-	struct object3D *CSGnext;	// For CSG objects, points to next component
-	struct object3D *next;		// Pointer to next entry in object linked list
-	
-	// If needed for the advanced raytracer, you can modify this data structure to add any data/methods you
-	// require.
+    struct object3D *CSGnext;	// For CSG objects, points to next component
+    struct object3D *next;		// Pointer to next entry in object linked list
+
+    // If needed for the advanced raytracer, you can modify this data structure to add any data/methods you
+    // require.
 };
 
 /* The structure below defines a point light source */
 struct pointLS{
-	struct colourRGB col;		// Light source colour
-	struct point3D p0;		// Light source location
-	struct pointLS *next;		// Pointer to next light in the scene
+    struct colourRGB col;		// Light source colour
+    struct point3D p0;		// Light source location
+    struct pointLS *next;		// Pointer to next light in the scene
 };
 
 /*
@@ -176,16 +184,16 @@ struct pointLS{
    to write code to initialize the camera position and orientation.
 */
 struct view{
-	struct point3D	e;		// Location of the camera center
-	struct point3D	u;		// u vector
-	struct point3D  v;		// v vector
-	struct point3D  w;		// w vector
-	double f;			// Focal length
-	double wl;			// Left edge in camera coordinates
-	double wt;			// Top edge in camera coordinates
-	double wsize;			// Window size in distance units (not pixels!)
-	double W2C[4][4];		// World2Camera conversion matrix
-	double C2W[4][4];		// Camera2World conversion matrix
+    struct point3D	e;		// Location of the camera center
+    struct point3D	u;		// u vector
+    struct point3D  v;		// v vector
+    struct point3D  w;		// w vector
+    double f;			// Focal length
+    double wl;			// Left edge in camera coordinates
+    double wt;			// Top edge in camera coordinates
+    double wsize;			// Window size in distance units (not pixels!)
+    double W2C[4][4];		// World2Camera conversion matrix
+    double C2W[4][4];		// Camera2World conversion matrix
 };
 
 // Function definitions start here

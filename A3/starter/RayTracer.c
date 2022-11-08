@@ -117,13 +117,15 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
                  &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
 
-
-
     // Create temp color for global component
-    struct colourRGB reflection_col;
+    struct colourRGB reflection_col, refraction_col;
     reflection_col.R = 0.0;
     reflection_col.G = 0.0;
     reflection_col.B = 0.0;
+
+    refraction_col.R = 0.0;
+    refraction_col.G = 0.0;
+    refraction_col.B = 0.0;
 
     // Local
     if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
@@ -178,7 +180,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
 
         // refraction
         if (obj->alpha < 1) {
-
+            // Calculate the refraction direction
+            // dt = rb + (rc - sqrt(1 - r^2*(1 - c^2)))n
+            // where b is direction of incident ray;
+            // c = -n dot b and r = c2/c1 = n1/n2, n1 is ind of leaving material
+            // n2 is ind of entering material
+            // (1 - obj->alpha) * rt * It
         }
     }
 
@@ -469,7 +476,7 @@ int main(int argc, char *argv[])
     printmatrix(cam->W2C);
     fprintf(stderr,"\n");
 
-    fprintf(stderr,"Rendering row: ");
+#pragma omp parallel for schedule(dynamic,32) private(ray)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
         fprintf(stderr,"%d/%d, ",j,sx);
@@ -488,7 +495,7 @@ int main(int argc, char *argv[])
 
                 for (double sub_i = .25; sub_i <= .75; sub_i += .5) {
                     for (double sub_j = .25; sub_j <= .75; sub_j += .5) {
-                        // cam->wl+(i*du) and cam->wt+(j*dv) 
+                        // cam->wl+(i*du) and cam->wt+(j*dv)
                         // is the x and y of the center of pixel; while
                         // ((sub_i-.5)*du) and ((sub_j-.5)*dv) are offset
                         pc.px = cam->wl + (i * du) + ((sub_i - 0.5) * du);
@@ -496,25 +503,25 @@ int main(int argc, char *argv[])
                         pc.pz = -1;
                         pc.pw = 1;
                         matVecMult(cam->C2W, &pc);
-                        
+
                         d = pc;
                         subVectors(&e, &d);
                         d.pw = 0;
                         normalize(&d);
-                        
+
                         initRay(&ray, &pc, &d);
                         temp_color.R = background.R;
                         temp_color.G = background.G;
                         temp_color.B = background.B;
                         rayTrace(&ray, 1, &temp_color, NULL);
-                        
+
                         sum_color.R += temp_color.R;
                         sum_color.G += temp_color.G;
                         sum_color.B += temp_color.B;
                     }
                 }
             }
-            
+
             // Setting up the point on the image plane in camera coordinate
             pc.px = cam->wl + (i * du); // u, which is x in pt on image plane
             pc.py = cam->wt + (j * dv); // v, which is y in pt on image plane
@@ -545,7 +552,7 @@ int main(int argc, char *argv[])
 
             // Trace the ray to get the color, if lambda > 0, color will be changed
             rayTrace(&ray, 1, &col, NULL);  // NULL as it is the beginning of the tracing
-            
+
             if (antialiasing) {
                 col.R = (col.R + sum_color.R) / 5;
                 col.G = (col.G + sum_color.G) / 5;
