@@ -3,3 +3,6 @@
 % to compile, and use CMD call:
  	./Raytracer 1024 10 1 test_antialiasing.ppm
 % Currently we're using buildscene from A2
+
+% Added multithread
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
