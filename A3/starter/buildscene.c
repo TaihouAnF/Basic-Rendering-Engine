@@ -62,7 +62,7 @@
  RotateZ(o,-PI/1.5);
  Translate(o,-2.2,1.75,1.35);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- loadTexture(o, "./Texture/testTex.ppm", 1, &texture_list);
+ //loadTexture(o, "./Texture/testTex.ppm", 1, &texture_list);
  insertObject(o,&object_list);
 
  o=newPlane(.05,.75,.05,.05,.55,.8,.75,1,1,2);
@@ -71,17 +71,17 @@
  RotateX(o,PI/2);
  Translate(o,0,-4,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- loadTexture(o, "./Texture/Paco.ppm", 1, &texture_list);
+ //loadTexture(o, "./Texture/Paco.ppm", 1, &texture_list);
  insertObject(o,&object_list);
 
 
  // add a cylinder
- o=newCyl(.05,.95,.95,.75,.75,.95,.55,1,1,6);
- RotateX(o,PI/2);
- Translate(o,0,1,1);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- loadTexture(o, "./Texture/testTex.ppm", 1, &texture_list);
- insertObject(o,&object_list);
+ //o=newCyl(.05,.95,.95,.75,.75,.95,.55,1,1,6);
+ //RotateX(o,PI/2);
+ //Translate(o,0,1,1);
+ //invert(&o->T[0][0],&o->Tinv[0][0]);
+ //loadTexture(o, "./Texture/testTex.ppm", 1, &texture_list);
+ //insertObject(o,&object_list);
 
  // Insert a single point light source. We set up its position as a point structure, and specify its
  // colour in terms of RGB (in [0,1]).

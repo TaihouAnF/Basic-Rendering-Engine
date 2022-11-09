@@ -651,12 +651,21 @@ void cylCoordinates(struct object3D *cyl, double a, double b, double *x, double 
 void planeSample(struct object3D *plane, double *x, double *y, double *z)
 {
  // Returns the 3D coordinates (x,y,z) of a randomly sampled point on the plane
- // Sapling should be uniform, meaning there should be an equal change of gedtting
+ // Sampling should be uniform, meaning there should be an equal change of getting
  // any spot on the plane
 
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+ // generate a random number between -1 and 1
+ double newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+ double newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+ point3D *temp = newPoint(newx, newy, 0);
+ // transform the point
+ matVecMult(plane->T, temp);
+ *x = temp->px;
+ *y = temp->py;
+ *z = temp->pz;
 }
 
 void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
