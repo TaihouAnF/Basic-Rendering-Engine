@@ -44,7 +44,7 @@ struct pointLS *light_list;
 struct textureNode *texture_list;
 int MAX_DEPTH;
 // how many points to randomly sample from an area light source
-int K = 10;
+int K = 50;
 
 void buildScene(void)
 {
@@ -110,29 +110,9 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     struct pointLS *curr_ls = light_list;
     struct ray3D shadow_ray;
     struct point3D *camera_dir = newPoint(-ray->d.px, -ray->d.py, -ray->d.pz);
-    // Setting up shadow ray direction
-    struct point3D shadow_direction = curr_ls->p0;
-    // b = b - a, where a is p and b is shadow_direction
-    // we store curr_ls-p0 in shadow_direction first
-    subVectors(p, &shadow_direction);
-    double dot_intensity_max = dot(n, &shadow_direction);
-    // Flip the normal if object is supposed to be illuminated front and back
-    if (obj->frontAndBack && dot_intensity_max < 0.0) {
-        n->px = -n->px;
-        n->py = -n->py;
-        n->pz = -n->pz;
-    }
-    initRay(&shadow_ray, p, &shadow_direction);
-    // direction pointing to reflection of light source ray
-    struct point3D *r_light = newPoint(shadow_direction.px, shadow_direction.py, shadow_direction.pz);
-    reflectionDirection(r_light, n);
     // direction pointing to reflection of camera ray
     struct point3D *r_camera = newPoint(camera_dir->px, camera_dir->py, camera_dir->pz);
     reflectionDirection(r_camera, n);
-    // direction pointing to light source
-    struct point3D *s = newPoint(shadow_direction.px, shadow_direction.py, shadow_direction.pz);
-    normalize(s);
-
     // Initialize shadow lambda,
     // and temp_varobj for findFirstHit to return
     double shadow_lambda;
@@ -140,9 +120,6 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     // assignment, same for all those a and b
     struct object3D *temp_var_obj;
     struct point3D shadow_temp_p, shadow_temp_n;
-    findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
-                 &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
-
     // Create temp color for global component
     struct colourRGB reflection_col, refraction_col;
     reflection_col.R = 0.0;
@@ -153,32 +130,71 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     refraction_col.G = 0.0;
     refraction_col.B = 0.0;
 
-
-
-    // Local
-    if (shadow_lambda > 0.0 && shadow_lambda < 1.0) {
-        tmp_col.R += R * obj->alb.ra;
-        tmp_col.G += G * obj->alb.ra;
-        tmp_col.B += B * obj->alb.ra;
-    } else {
-        double specular =  pow(max(0.0, dot(camera_dir, r_light)), obj->shinyness);
-        double ns = dot(n, s);
-        // Add the phong model and finish local
-        tmp_col.R += R * (obj->alb.ra + (obj->alb.rd * curr_ls->col.R * max(0.0, ns)))
-                     + obj->alb.rs * curr_ls->col.R * specular;
-        tmp_col.G += G * (obj->alb.ra + (obj->alb.rd * curr_ls->col.G * max(0.0, ns)))
-                     + obj->alb.rs * curr_ls->col.G * specular;
-        tmp_col.B += B * (obj->alb.ra + (obj->alb.rd * curr_ls->col.B * max(0.0, ns)))
-                     + obj->alb.rs * curr_ls->col.B * specular;
+    // objects will have the ambient component no matter what
+    tmp_col.R += R * obj->alb.ra;
+    tmp_col.G += G * obj->alb.ra;
+    tmp_col.B += B * obj->alb.ra;
+    struct object3D *obj_head = object_list;
+    double x;
+    double y;
+    double z;
+    while (obj_head != NULL) {
+        if (obj_head != obj && obj_head->isLightSource) {
+            // Sample K points from the area light source
+            for (int i = 0; i < K; i++) {
+                obj_head->randomPoint(obj_head, &x, &y, &z);
+                struct point3D* shadow_direction = newPoint(x, y, z);
+                //printf("x: %f, y: %f, z: %f\n", x, y, z);
+                subVectors(p, shadow_direction);
+                // Setting up shadow ray
+                double dot_intensity_max = dot(n, shadow_direction);
+                struct point3D* normal = newPoint(n->px, n->py, n->pz);
+                if (obj->frontAndBack && dot_intensity_max < 0.0) {
+                    normal->px = -normal->px;
+                    normal->py = -normal->py;
+                    normal->pz = -normal->pz;
+                }
+                initRay(&shadow_ray, p, shadow_direction);
+                struct point3D *r_light = newPoint(shadow_direction->px, shadow_direction->py, shadow_direction->pz);
+                reflectionDirection(r_light, normal);
+                // // direction pointing to light source
+                struct point3D *s = newPoint(shadow_direction->px, shadow_direction->py, shadow_direction->pz);
+                normalize(s);
+                // Check if the shadow ray intersects with any object
+                findFirstHit(&shadow_ray, &shadow_lambda, obj, &temp_var_obj,
+                             &shadow_temp_p, &shadow_temp_n, &shadow_a, &shadow_b);
+                // NOTE: for some reason setting shadow_lambda < 1.0 doesn't work
+                if (shadow_lambda > 0.0 && shadow_lambda < 0.999999) {}
+                else {
+                    // Flip the normal if object is supposed to be illuminated front and back
+                    // direction pointing to reflection of light source ray
+                    double specular =  pow(max(0.0, dot(camera_dir, r_light)), obj->shinyness);
+                    double ns = dot(normal, s);
+                    // Add the phong model and finish local
+                    double intensity =  ((double) 1) / ((double)K);
+                    tmp_col.R += R * intensity * (obj->alb.rd * obj_head->col.R * max(0.0, ns))
+                                  + intensity * obj->alb.rs * obj_head->col.R * specular;
+                    tmp_col.G += G * intensity * (obj->alb.rd * obj_head->col.G * max(0.0, ns))
+                                  + intensity * obj->alb.rs * obj_head->col.G * specular;
+                    tmp_col.B += B * intensity * (obj->alb.rd * obj_head->col.B * max(0.0, ns))
+                                  + intensity * obj->alb.rs * obj_head->col.B * specular;
+                }
+                free(r_light);
+                free(s);
+                free(normal);
+                free(shadow_direction);
+            }
+        }
+        obj_head = obj_head->next;
     }
 
     // Global
     struct ray3D reflection_ray;
     if (depth < MAX_DEPTH) {
-        if (obj->alb.rs > 0) {
-            initRay(&reflection_ray, p, r_camera);
-            rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
-        }
+        //if (obj->alb.rs > 0) {
+        //    initRay(&reflection_ray, p, r_camera);
+        //    rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+        //}
 
         // refraction
         if (obj->alpha < 1) {
@@ -200,9 +216,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
     col->G = (tmp_col.G > 1.0) ? 1.0 : tmp_col.G;
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
-    free(r_light);
     free(r_camera);
-    free(s);
     free(camera_dir);
     return;
 }
@@ -480,7 +494,7 @@ int main(int argc, char *argv[])
     printmatrix(cam->W2C);
     fprintf(stderr,"\n");
 
-#pragma omp parallel for schedule(dynamic,32) private(ray)
+//#pragma omp parallel for schedule(dynamic,32) private(ray)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
         fprintf(stderr,"%d/%d, ",j,sx);

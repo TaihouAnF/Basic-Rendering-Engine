@@ -666,6 +666,7 @@ void planeSample(struct object3D *plane, double *x, double *y, double *z)
  *x = temp->px;
  *y = temp->py;
  *z = temp->pz;
+ free(temp);
 }
 
 void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
@@ -674,20 +675,56 @@ void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
  // Sampling should be uniform - note that this is tricky for a sphere, do some
  // research and document in your report what method is used to do this, along
  // with a reference to your source.
- 
+
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+// algorithm taken from: https://math.stackexchange.com/questions/1585975/how-to-generate-random-points-on-a-sphere
+double newx;
+double newy;
+double newz;
+// loop until x y z is not 0
+while (newx == 0 && newy == 0 && newz == 0) {
+ // generate x,y,z in [-1,1]
+ newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+ newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+ newz = (double)rand() / (double)RAND_MAX * 2 - 1;
+}
+// normalize the vector
+point3D *temp = newPoint(newx, newy, newz);
+normalize(temp);
+// transform the point
+matVecMult(sphere->T, temp);
+*x = temp->px;
+*y = temp->py;
+*z = temp->pz;
+free(temp);
 }
 
 void cylSample(struct object3D *cyl, double *x, double *y, double *z)
 {
- // Returns the 3D coordinates (x,y,z) of a randomly sampled point on the cylinder
- // Sampling should be uniform over the cylinder.
-
- /////////////////////////////////
- // TO DO: Complete this function.
- /////////////////////////////////   
+// Returns the 3D coordinates (x,y,z) of a randomly sampled point on the cylinder
+// Sampling should be uniform over the cylinder.
+/////////////////////////////////
+// TO DO: Complete this function.
+/////////////////////////////////
+// generate a int between 0 and 9
+double newx;
+double newy;
+double newz;
+while (newx == 0 && newy == 0) {
+    newx = (double) rand() / (double) RAND_MAX * 2 - 1;
+    newy = (double) rand() / (double) RAND_MAX * 2 - 1;
+}
+// normalize
+point3D *temp = newPoint(newx, newy, 0);
+normalize(temp);
+temp->pz = (double) rand() / (double) RAND_MAX * 2 - 1;
+matVecMult(cyl->T, temp);
+*x = temp->px;
+*y = temp->py;
+*z = temp->pz;
+free(temp);
 }
 
 
