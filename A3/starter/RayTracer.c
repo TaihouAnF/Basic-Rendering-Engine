@@ -191,10 +191,10 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     // Global
     struct ray3D reflection_ray;
     if (depth < MAX_DEPTH) {
-        //if (obj->alb.rs > 0) {
-        //    initRay(&reflection_ray, p, r_camera);
-        //    rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
-        //}
+        if (obj->alb.rs > 0) {
+            initRay(&reflection_ray, p, r_camera);
+            rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+        }
 
         // refraction
         if (obj->alpha < 1) {
