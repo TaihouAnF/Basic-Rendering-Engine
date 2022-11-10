@@ -168,9 +168,7 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
     memcpy(&ray->p0,p0,sizeof(struct point3D));
     memcpy(&ray->d,d,sizeof(struct point3D));
     ray->rayPos=&rayPosition;
-    ray->ref_ind_stack = NULL;
-//  struct refIndexStk newStk = newStackEntry(1.0);
-//  stackInsert(&newStk, ray->ref_ind_stack);
+    ray->ref_ind_stack = newStackEntry(1.0); // Assuming initialized ray starts from vacuum 
 }
 
 // Refraction index stack inlines
@@ -228,7 +226,7 @@ void cylSample(struct object3D *plane, double *x, double *y, double *z);
 void planeIntersect(struct object3D *plane, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 void sphereIntersect(struct object3D *sphere, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
 void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
-void rayMarching(struct object3D *implicit_surf, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b);
+
 
 // Functions to texture-map objects
 // You will need to add code for these if you implement texture mapping.
