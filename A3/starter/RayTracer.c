@@ -194,6 +194,10 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         if (obj->alb.rs > 0) {
             initRay(&reflection_ray, p, r_camera);
             rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
+            // I = Il + Ig, Il could be only ambient or full phong model
+            tmp_col.R += obj->alb.rg * reflection_col.R;
+            tmp_col.G += obj->alb.rg * reflection_col.G;
+            tmp_col.B += obj->alb.rg * reflection_col.B;
         }
 
         // refraction

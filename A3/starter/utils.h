@@ -148,29 +148,6 @@ inline double length(struct point3D *a)
 struct point3D *newPoint(double px, double py, double pz);
 struct pointLS *newPLS(struct point3D *p0, double r, double g, double b);
 
-// Ray management inlines
-inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos)
-{
-    // Compute and return 3D position corresponding to a given lambda
-    // for the ray.
-    pos->px=ray->p0.px+(lambda*ray->d.px);
-    pos->py=ray->p0.py+(lambda*ray->d.py);
-    pos->pz=ray->p0.pz+(lambda*ray->d.pz);
-    pos->pw=1;
-}
-
-inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
-{
-    // Initializes the given ray3D struct with the the position
-    // and direction vectors. Note that this function DOES NOT normalize
-    // d to be a unit vector.
-
-    memcpy(&ray->p0,p0,sizeof(struct point3D));
-    memcpy(&ray->d,d,sizeof(struct point3D));
-    ray->rayPos=&rayPosition;
-    ray->ref_ind_stack = newStackEntry(1.0); // Assuming initialized ray starts from vacuum 
-}
-
 // Refraction index stack inlines
 inline struct refIndexStk *newStackEntry(double entering_index) {
     struct refIndexStk *newEntry = (struct refIndexStk *)malloc(1 * sizeof(struct refIndexStk));
@@ -201,6 +178,29 @@ inline void freeStack(struct refIndexStk *stack) {
         free(temp_stack);
     }
     return;
+}
+
+// Ray management inlines
+inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos)
+{
+    // Compute and return 3D position corresponding to a given lambda
+    // for the ray.
+    pos->px=ray->p0.px+(lambda*ray->d.px);
+    pos->py=ray->p0.py+(lambda*ray->d.py);
+    pos->pz=ray->p0.pz+(lambda*ray->d.pz);
+    pos->pw=1;
+}
+
+inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
+{
+    // Initializes the given ray3D struct with the the position
+    // and direction vectors. Note that this function DOES NOT normalize
+    // d to be a unit vector.
+
+    memcpy(&ray->p0,p0,sizeof(struct point3D));
+    memcpy(&ray->d,d,sizeof(struct point3D));
+    ray->rayPos=&rayPosition;
+    ray->ref_ind_stack = newStackEntry(1.0); // Assuming initialized ray starts from vacuum 
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects
