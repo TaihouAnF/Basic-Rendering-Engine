@@ -220,11 +220,8 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 c = -c;
                 r = ray->ref_ind_stack->current_index / obj->r_index;
                 struct refraction_ind_stk *new_stk_top = newStackInstance(obj->r_index);
-                // printf("n1 = %f n2 = %f\n", ray->ref_ind_stack->current_index, obj->r_index);
                 ray->ref_ind_stack = stackInsert(new_stk_top, ray->ref_ind_stack);
-                // printf("stacktop = %f obj = %f\n", ray->ref_ind_stack->current_index, obj->r_index);
                 inside = 1;
-                // printf("hi\n");
             } else if(c > 0 && inside) {
                 // The ray is *Inside* of the surface since c is positive, and we 
                 // need to flip the normal(refraction_direction) in this case
@@ -260,13 +257,11 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 refraction_ray.rayPos = &rayPosition;
                 if (going_out) {
                     refraction_ray.inside = 0;
+                    stackPop(refraction_ray.ref_ind_stack);
                 } else {
                     refraction_ray.inside = inside;
                 }
                 refraction_ray.ref_ind_stack = ray->ref_ind_stack;
-                if (going_out) {
-                    stackPop(refraction_ray.ref_ind_stack);
-                }
                 refraction_ray.first_ray = 0;
                 rayTrace(&refraction_ray, depth + 1, &refraction_col, obj);
                 tmp_col.R *= obj->alpha;
