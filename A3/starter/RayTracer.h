@@ -77,6 +77,7 @@ struct ray3D{
     // TODOs: add stack here to keep track of refractive
     struct refraction_ind_stk *ref_ind_stack;
     int inside;
+    int first_ray;
 };
 
 /*
