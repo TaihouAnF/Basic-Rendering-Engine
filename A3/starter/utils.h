@@ -173,6 +173,7 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
     memcpy(&ray->p0,p0,sizeof(struct point3D));
     memcpy(&ray->d,d,sizeof(struct point3D));
     ray->rayPos=&rayPosition;
+    ray->inside=false;
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects
