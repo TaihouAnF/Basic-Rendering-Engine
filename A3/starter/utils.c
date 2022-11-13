@@ -176,13 +176,12 @@ struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, 
 // Pop the top of the stack, while still preserve the rest of the stack
 // input: the pointer of the current stack top
 // output: a double of the index from stack instance popped
-double stackPop(struct refraction_ind_stk *current_stack) {
-  if (!current_stack) return -1;
+void stackPop(struct refraction_ind_stk *current_stack) {
+  if (!current_stack) return;
   struct refraction_ind_stk *current_stack_top = current_stack;
-  double leaving_index = current_stack_top->current_index;
   current_stack = current_stack->next;
   free(current_stack_top);
-  return leaving_index;
+  return;
 }
 
 /////////////////////////////////////////////
@@ -431,6 +430,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  // Similar to plane intersect, we have to deform the ray first
  struct ray3D deformed_ray;
  rayTransform(ray, &deformed_ray, sphere);
+ deformed_ray.inside = ray->inside;
 
  // Calculating the A B C and D
  
@@ -447,10 +447,18 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
   double lambda_1 = -(B / A) + (sqrt(D) / A);
   double lambda_2 = -(B / A) - (sqrt(D) / A);
   if (lambda_2 >= lambda_1 && lambda_1 > 0.0) {
-    *lambda = lambda_1;
+    if (deformed_ray.inside) {
+      *lambda = lambda_2;
+    } else {
+      *lambda = lambda_1;
+    }
   }
   else if (lambda_1 > lambda_2 && lambda_2 > 0.0) {
-    *lambda = lambda_2;
+    if (deformed_ray.inside) {
+      *lambda = lambda_1;
+    } else {
+      *lambda = lambda_2;
+    }
   }
   else if (lambda_1 > 0.0) {
     *lambda = lambda_1;

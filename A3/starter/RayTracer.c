@@ -189,10 +189,12 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     }
 
     // Global
-    struct ray3D reflection_ray;
+    struct ray3D reflection_ray, refraction_ray;
     if (depth < MAX_DEPTH) {
         if (obj->alb.rs > 0) {
             initRay(&reflection_ray, p, r_camera);
+            reflection_ray.inside = ray->inside;
+            reflection_ray.ref_ind_stack = ray->ref_ind_stack;
             rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
             // I = Il + Ig, Il could be only ambient or full phong model
             tmp_col.R += obj->alb.rg * reflection_col.R;
@@ -208,13 +210,99 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             // c = -n dot b and r = c2/c1 = n1/n2, n1 is ind of leaving material
             // n2 is ind of entering material
             // (1 - obj->alpha) * rt * It
+            ray->ref_ind_stack = newStackInstance(1.0); // Assuming initialized ray starts from vacuum 
+
+            // First, we check the normal and incident ray direction
+            struct point3D *refraction_direction = newPoint(n->px, n->py, n->pz);
+            double c = dot(&(ray->d), n);
+            // printf("c now, first should be negative: %f\n", c);
+            double r;
+            int inside = ray->inside;
+            int going_out = 0;
+            if (c <= 0) {
+                // The ray is *Outside* of the surface, it is about to enter
+                // so normal is the same, and we need to make c to be positive
+                c = -c;
+                r = ray->ref_ind_stack->current_index / obj->r_index;
+                struct refraction_ind_stk *new_stk_top = newStackInstance(obj->r_index);
+                // printf("n1 = %f n2 = %f\n", ray->ref_ind_stack->current_index, obj->r_index);
+                ray->ref_ind_stack = stackInsert(new_stk_top, ray->ref_ind_stack);
+                // printf("stacktop = %f obj = %f\n", ray->ref_ind_stack->current_index, obj->r_index);
+                inside = 1;
+                // printf("hi\n");
+            } else if(c > 0 && inside) {
+                // The ray is *Inside* of the surface since c is positive, and we 
+                // need to flip the normal(refraction_direction) in this case
+                double leaving = ray->ref_ind_stack->current_index;
+                if (leaving < 0) return;
+                r = leaving / ray->ref_ind_stack->next->current_index;
+                // printf("n px:%f n py:%f n pz:%f\n", n->px, n->py, n->pz);
+                // printf("  px:%f   py:%f   pz:%f\n", refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                refraction_direction->px = -refraction_direction->px;
+                refraction_direction->py = -refraction_direction->py;
+                refraction_direction->pz = -refraction_direction->pz;
+                // printf(" -px:%f  -py:%f  -pz:%f\n", refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                going_out = 1;
+            } else {
+                return;
+            }
+            //  1 - sqrt(1 - r^2*(1 - c^2))
+            double intercheck = 1 - ((r * r) * (1 - (c * c)));
+            if (intercheck >= 0) {
+                // (rc - sqrt(1 - r^2*(1 - c^2)))n in our case refraction_direction 
+                // is the n,  we need to use addVector() 
+                printf("r: %f\n", r);
+                double coeff = r * c - sqrt(intercheck);
+                printf("n      px:%f n      py:%f n      pz:%f\n", n->px, n->py, n->pz);
+                printf("       px:%f        py:%f        pz:%f\n", refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                printf("coeff: %f\n", coeff);
+                refraction_direction->px *= coeff;
+                refraction_direction->py *= coeff;
+                refraction_direction->pz *= coeff;
+                printf("new    px:%f new    py:%f new    pz:%f\n", refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                // rb
+                struct point3D *temp_incident_ray_d = newPoint(ray->d.px, ray->d.py, ray->d.pz);
+                printf("d      px:%f d      py:%f d      pz:%f\n", ray->d.px, ray->d.py, ray->d.pz);
+                printf("    tmdpx:%f     tmdpy:%f     tmdpz:%f\n", temp_incident_ray_d->px, temp_incident_ray_d->py, temp_incident_ray_d->pz);
+                
+                temp_incident_ray_d->px *= r;
+                temp_incident_ray_d->py *= r;
+                temp_incident_ray_d->pz *= r;
+                printf("now tmdpx:%f now tmdpy:%f now tmdpz:%f\n", temp_incident_ray_d->px, temp_incident_ray_d->py, temp_incident_ray_d->pz);
+                // dt = rb + (rc - sqrt(1 - r^2*(1 - c^2)))n b=a+b
+                addVectors(temp_incident_ray_d, refraction_direction);
+                normalize(refraction_direction);
+                printf("ref_dir x:%f         y:%f         z:%f\n", refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                struct point3D *refraction_point = newPoint(p->px, p->py, p->pz);
+                memcpy(&refraction_ray.p0, refraction_point, sizeof(struct point3D));
+                memcpy(&refraction_ray.d, refraction_direction, sizeof(struct point3D));
+                refraction_ray.rayPos = &rayPosition;
+                refraction_ray.inside = inside;
+                refraction_ray.ref_ind_stack = ray->ref_ind_stack;
+                if (going_out && ray->ref_ind_stack->next != NULL && ray->ref_ind_stack != NULL) {
+                    stackPop(refraction_ray.ref_ind_stack);
+                }
+                printf("refraction stack top: %f\n", refraction_ray.ref_ind_stack->current_index);
+                // printf("normal: x:%f y:%f z:%f; direction: x:%f, y:%f, z:%f, ref_dirc: x:%f y:%f z:%f\n", n->px, n->py, n->pz, ray->d.px, ray->d.py, ray->d.pz, refraction_direction->px, refraction_direction->py, refraction_direction->pz);
+                // printf("inters: x:%f         y:%f         z:%f\n", p->px, p->py, p->pz);
+                
+                printf("and flag inside :%d\n", refraction_ray.inside);
+                // if(!inside) printf("c now %f, it should be positive\n",c);
+                rayTrace(&refraction_ray, depth + 1, &refraction_col, obj);
+                tmp_col.R *= obj->alpha;
+                tmp_col.G *= obj->alpha;
+                tmp_col.B *= obj->alpha;
+                
+                tmp_col.R += ((1 - obj->alpha) * refraction_col.R);
+                tmp_col.G += ((1 - obj->alpha) * refraction_col.G);
+                tmp_col.B += ((1 - obj->alpha) * refraction_col.B);
+                free(temp_incident_ray_d);
+                free(refraction_point);
+            }
+            free(refraction_direction);
         }
     }
 
-    // I = Il + Ig, Il could be only ambient or full phong model
-    tmp_col.R += obj->alb.rg * reflection_col.R;
-    tmp_col.G += obj->alb.rg * reflection_col.G;
-    tmp_col.B += obj->alb.rg * reflection_col.B;
 
     // Update the final color of the pixel
     col->R = (tmp_col.R > 1.0) ? 1.0 : tmp_col.R;
@@ -250,7 +338,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     struct object3D *obj_head = object_list;
     while (obj_head != NULL) {
         // Check if current obj is the object source
-        if (obj_head != Os) {
+        if (obj_head != Os || ray->inside) {
 
             // Find intersection with current obj
             double temp_lambda = -1.0;     // temp lambda to store the result
@@ -351,7 +439,6 @@ void rayTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object
         col->G = col->G;
         col->B = col->B;
     }
-
 }
 
 int main(int argc, char *argv[])
@@ -501,6 +588,7 @@ int main(int argc, char *argv[])
 //#pragma omp parallel for schedule(dynamic,32) private(ray)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
+        if (j != 240) continue;
         fprintf(stderr,"%d/%d, ",j,sx);
         for (i=0;i<sx;i++)
         {
@@ -508,6 +596,7 @@ int main(int argc, char *argv[])
             // TO DO - complete the code that should be in this loop to do the
             //         raytracing! Done
             ///////////////////////////////////////////////////////////////////
+            if (i != 256) continue;
             if (antialiasing) {
                 // Initialize the sum color for summing all four location
                 // and a temp color container TODOs: need checking
