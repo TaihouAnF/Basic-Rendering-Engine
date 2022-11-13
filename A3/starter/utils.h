@@ -148,19 +148,10 @@ inline double length(struct point3D *a)
 struct point3D *newPoint(double px, double py, double pz);
 struct pointLS *newPLS(struct point3D *p0, double r, double g, double b);
 
-// Refraction index stack inlines
+// Refraction index stack
 struct refraction_ind_stk *newStackInstance(double entering_index);
 struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, struct refraction_ind_stk *stack_top);
 double stackPop(struct refraction_ind_stk *current_stack);
-inline void freeStack(struct refraction_ind_stk *stack) {
-    struct refraction_ind_stk *temp_stack;
-    while (stack != NULL) {
-        temp_stack = stack;
-        stack = stack->next;
-        free(temp_stack);
-    }
-    return;
-}
 
 // Ray management inlines
 inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos)
@@ -182,7 +173,6 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
     memcpy(&ray->p0,p0,sizeof(struct point3D));
     memcpy(&ray->d,d,sizeof(struct point3D));
     ray->rayPos=&rayPosition;
-    ray->ref_ind_stack = newStackInstance(1.0); // Assuming initialized ray starts from vacuum 
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects

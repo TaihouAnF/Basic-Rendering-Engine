@@ -176,7 +176,7 @@ struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, 
 // Pop the top of the stack, while still preserve the rest of the stack
 // input: the pointer of the current stack top
 // output: a double of the index from stack instance popped
-double refraction_ind_stk stackPop(struct refraction_ind_stk *current_stack) {
+double stackPop(struct refraction_ind_stk *current_stack) {
   if (!stack) return -1;
   struct refraction_ind_stk *current_stack_top = current_stack;
   double leaving_index = current_stack_top->current_index;
