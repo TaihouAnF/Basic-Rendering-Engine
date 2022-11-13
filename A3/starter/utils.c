@@ -148,6 +148,44 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
 }
 
 /////////////////////////////////////////////
+// Stack management section
+/////////////////////////////////////////////
+
+// Create a new stack instance, then return a pointer
+// input: double entering_index: the index that the ray is about to
+//        enter
+// output: a stack pointer to that stack instances
+struct refraction_ind_stk *newStackInstance(double entering_index) {
+  struct refraction_ind_stk *newEntry = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
+  newEntry->current_index = entering_index;
+  newEntry->next = NULL;
+  return newEntry;
+}
+
+// Insert a stack instance to current stack(linked-list), current stack top 
+// would become new stack top's next, and return a pointer to the new Stack
+// input: a pointer to new stack instance
+//        pointer to current stack top(which contains links to whole stack)
+// output: a pointer to new stack top, containing the whole stack
+struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return new_instance;
+  new_instance->next = stack_top;
+  return new_instance;
+}
+
+// Pop the top of the stack, while still preserve the rest of the stack
+// input: the pointer of the current stack top
+// output: a double of the index from stack instance popped
+double refraction_ind_stk stackPop(struct refraction_ind_stk *current_stack) {
+  if (!stack) return -1;
+  struct refraction_ind_stk *current_stack_top = current_stack;
+  double leaving_index = current_stack_top->current_index;
+  current_stack = current_stack->next;
+  free(current_stack_top);
+  return leaving_index;
+}
+
+/////////////////////////////////////////////
 // Object management section
 /////////////////////////////////////////////
 void insertObject(struct object3D *o, struct object3D **list)
