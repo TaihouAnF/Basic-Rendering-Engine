@@ -4,12 +4,13 @@
 % Added multithread
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 
-% Testing origin buildscene, which including area LS:
-	g++ -O3 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+% Testing origin buildscene, which including area LS is being visible, use buildscene_original_1:
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
 	./Raytracer 1024 5 0 test_origin.ppm
 
+
 % To run testing for "antialiasing": use same buildscene: 
-	g++ -O3 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
  	./Raytracer 1024 5 1 test_antialiasing.ppm
 
 % Test "refraction", use buildscene_refraction, this runs about 5min with multithreading
@@ -17,4 +18,4 @@
 	./RayTracer 1024 5 1 test_refraction.ppm
 
 % To test ray marching, we need new util.c and util.h and new buildscene_raymarching TODO embed raymarching code in new util.c/.h
-	g++ -O3 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer

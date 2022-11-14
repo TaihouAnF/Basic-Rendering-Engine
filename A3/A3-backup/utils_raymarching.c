@@ -32,7 +32,7 @@
 * (sign with your name)            (sign with your name)
 ********************************************************************************/
 
-#include "utils.h"
+#include "utils_raymarching.h"
 
 // A useful 4x4 identity matrix which can be used at any point to
 // initialize or reset object transformations
@@ -148,6 +148,69 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
 }
 
 /////////////////////////////////////////////
+// Stack management section
+/////////////////////////////////////////////
+
+// Create a new stack instance, then return a pointer
+// input: double entering_index: the index that the ray is about to
+//        enter
+// output: a stack pointer to that stack instances
+struct refraction_ind_stk *newStackInstance(double entering_index) {
+  struct refraction_ind_stk *newEntry = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
+  newEntry->current_index = entering_index;
+  newEntry->next = NULL;
+  return newEntry;
+}
+
+// Create a new stack by copying old stack, will combine with pop or insert
+// input: old stack top
+// output: pointer to new stack copied from old stack
+struct refraction_ind_stk *stackCopy(struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return NULL;
+  struct refraction_ind_stk *new_stack_top = newStackInstance(stack_top->current_index);
+  new_stack_top->next = stackCopy(stack_top->next);
+  return new_stack_top;
+}
+
+// Insert a stack instance to current stack(linked-list), current stack top 
+// would become new stack top's next, and return a pointer to the new Stack
+// input: a pointer to new stack instance(not a whole stack)
+//        pointer to current stack top(which contains links to whole stack)
+// output: a pointer to new stack top, containing the whole stack
+struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return stackCopy(new_instance);
+  if (new_instance->next) {
+    printf("Oops, we don't support that!\n");
+    return stack_top;
+  }
+  struct refraction_ind_stk *new_stack_top = new_instance;
+  new_stack_top->next = stackCopy(stack_top);
+  return new_stack_top;
+}
+
+// Pop the top of the stack, while still preserve the rest of the stack
+// input: the pointer of the current stack top
+// output: a double of the index from stack instance popped
+struct refraction_ind_stk *stackPop(struct refraction_ind_stk *current_stack) {
+  if (!current_stack) return NULL;
+  struct refraction_ind_stk *new_stack_top = stackCopy(current_stack->next);
+  return new_stack_top;
+}
+
+// Free the whole stack, will be used at the end of the rtShade
+// input: the pointer to the stack
+void stackFree(struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return;
+  struct refraction_ind_stk *current_stk_ins;
+  while (stack_top) {
+    current_stk_ins = stack_top;
+    stack_top = stack_top->next;
+    free(current_stk_ins);
+  }
+  return;
+}
+
+/////////////////////////////////////////////
 // Object management section
 /////////////////////////////////////////////
 void insertObject(struct object3D *o, struct object3D **list)
@@ -241,7 +304,7 @@ struct object3D *newSphere(double ra, double rd, double rs, double rg, double r,
   sphere->alpha=alpha;
   sphere->r_index=r_index;
   sphere->shinyness=shiny;
-  sphere->intersect=&rayMarching;
+  sphere->intersect=&rayMarchingSphere;
   sphere->surfaceCoords=&sphereCoordinates;
   sphere->randomPoint=&sphereSample;
   sphere->texImg=NULL;
@@ -306,6 +369,53 @@ struct object3D *newCyl(double ra, double rd, double rs, double rg, double r, do
 //      and canonical sphere with a given ray. This is the most fundamental component
 //      of the raytracer.
 ///////////////////////////////////////////////////////////////////////////////////////
+
+// Ray Marching section, currently only have unit implicit Sphere
+// Can be added more in the future, by only changing the implicit 
+// function
+double impliSphere(double px, double py, double pz) {
+  return (px * px) + (py * py) + (pz * pz) - 1.0;
+}
+
+void rayMarchingSphere(struct object3D *implicit_surf, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b) {
+  double tmp_lam = 0.0;
+  double tolr = 0.00000001;
+  double dl = 0.1;
+  int done = 0;
+  double distance_origin = impliSphere(ray->p0.px, ray->p0.py, ray->p0.pz);
+  struct point3D temp_point;
+  while (done < 10000) {
+    ray->rayPos(ray, tmp_lam, &temp_point);
+    double distance = impliSphere(temp_point.px, temp_point.py, temp_point.pz);
+    if (fabs(distance) < tolr) {
+      // Update lambda
+      *lambda = tmp_lam;
+      // Update intersection pt p
+      ray->rayPos(ray, *lambda, p);
+      // Get normal then update it
+      struct point3D temp_normal;
+      temp_normal.px = -(impliSphere(temp_point.px+tolr, temp_point.py, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      temp_normal.py = -(impliSphere(temp_point.px, temp_point.py+tolr, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      temp_normal.pz = -(impliSphere(temp_point.px, temp_point.py, temp_point.pz+tolr) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      normalize(&temp_normal);
+      n->px = temp_normal.px;
+      n->py = temp_normal.py;
+      n->pz = temp_normal.pz;
+      n->pw = 1;
+      return;
+    }
+    else if ((distance < 0 && distance_origin > 0) || (distance > 0 && distance_origin < 0)) {
+      tmp_lam = tmp_lam - dl;
+      dl = dl / 2;
+    }
+    else {
+      tmp_lam += dl;
+    }
+    done++;
+  }
+  return;
+}
+
 void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
 {
  // Computes and returns the value of 'lambda' at the intersection
@@ -334,6 +444,7 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  struct point3D *temp_plane_normal;
  temp_plane_normal = newPoint(0, 0, 1);
 
+
  // Subtract vector/points
  subVectors(&(deformed_ray.p0), temp_plane_point);
 
@@ -357,10 +468,8 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
     deformed_ray.rayPos(&deformed_ray, temp_intersect_lambda, &temp_intersect_point);
     if (temp_intersect_point.px > -1.0 && temp_intersect_point.px < 1.0 && 
         temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0) {
-          
           // Update lambda 
           *lambda = temp_intersect_lambda;
-
           // obtain the intersect point
           struct point3D temp_intersect_point_transform;
           ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
@@ -371,9 +480,8 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
           struct point3D temp_plane_normal_transform;
           normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
           *n = temp_plane_normal_transform;
-          // Change a and b, might change in future assignment
-          *a = *a;
-          *b = *b;
+          *a = (temp_intersect_point.px + 1.0) / 2.0;
+          *b = (temp_intersect_point.py + 1.0) / 2.0;
     }
   }
  }
@@ -381,7 +489,6 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  // free allocated temp point/normal, as we used newPoint()
  free(temp_plane_point);
  free(temp_plane_normal);
-
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -396,6 +503,7 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  // Similar to plane intersect, we have to deform the ray first
  struct ray3D deformed_ray;
  rayTransform(ray, &deformed_ray, sphere);
+ deformed_ray.inside = ray->inside;
 
  // Calculating the A B C and D
  
@@ -412,10 +520,18 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
   double lambda_1 = -(B / A) + (sqrt(D) / A);
   double lambda_2 = -(B / A) - (sqrt(D) / A);
   if (lambda_2 >= lambda_1 && lambda_1 > 0.0) {
-    *lambda = lambda_1;
+    if (deformed_ray.inside) {
+      *lambda = lambda_2;
+    } else {
+      *lambda = lambda_1;
+    }
   }
   else if (lambda_1 > lambda_2 && lambda_2 > 0.0) {
-    *lambda = lambda_2;
+    if (deformed_ray.inside) {
+      *lambda = lambda_1;
+    } else {
+      *lambda = lambda_2;
+    }
   }
   else if (lambda_1 > 0.0) {
     *lambda = lambda_1;
@@ -437,10 +553,9 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
   struct point3D temp_sphere_normal_transform;
   normalTransform(&temp_sphere_normal, &temp_sphere_normal_transform, sphere);
   *n = temp_sphere_normal_transform;
-
   // Update a and b
-  *a = *a;
-  *b = *b;
+  *a = 0.5 + asin(temp_sphere_normal.py) / PI;
+  *b = 0.5 + atan2(temp_sphere_normal.px, temp_sphere_normal.pz) / (2 * PI);
  }
 }
 
@@ -564,7 +679,6 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
  // normal might have different cases(cap/base v.s. wall)
  if ((lambda_wall > lambda_cap_base && lambda_cap_base > 0.0) ||
      (lambda_cap_base > 0.0 && lambda_wall < 0.0)) {
-  
   // Update lambda
   *lambda = lambda_cap_base;
 
@@ -584,10 +698,8 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
   struct point3D temp_nor_transfrom;
   normalTransform(temp_cylinder_cap_normal, &temp_nor_transfrom, cylinder);
   *n = temp_nor_transfrom;
-
-  *a = *a;
-  *b = *b;
-  
+  *a = (atan2(temp_cylinder_point_cap.px, temp_cylinder_point_cap.py) / (2 * PI)) + 0.5;
+  *b = fabs(temp_cylinder_point_cap.pz);
   free(temp_cylinder_cap_normal);
  }
  else if ((lambda_cap_base >= lambda_wall && lambda_wall > 0.0) ||
@@ -609,57 +721,12 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
   struct point3D temp_nor_transform;
   normalTransform(&temp_cylinder_wall_normal, &temp_nor_transform, cylinder);
   *n = temp_nor_transform;
-
-  *a = *a;
-  *b = *b;
+  *a = (atan2(temp_cylinder_point_wall.px, temp_cylinder_point_wall.py) / (2 * PI)) + 0.5;
+  *b = fabs(temp_cylinder_point_wall.pz);
  }
  else {
   return;
  }
-}
-
-// Ray Marching section currently only have implicit Sphere
-double impliSphere(double px, double py, double pz) {
-  return (px * px) + (py * py) + (pz * pz) - 1.0;
-}
-
-void rayMarching(struct object3D *implicit_surf, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b) {
-  double tmp_lam = 0.0;
-  double tolr = 0.00000001;
-  double dl = 0.1;
-  int done = 0;
-  double distance_origin = impliSphere(ray->p0.px, ray->p0.py, ray->p0.pz);
-  struct point3D temp_point;
-  while(done < 10000) {
-    ray->rayPos(ray, tmp_lam, &temp_point);
-    double distance = impliSphere(temp_point.px, temp_point.py, temp_point.pz);
-    if (fabs(distance) < tolr) {
-      // Update lambda
-      *lambda = tmp_lam;
-      // Update intersection pt p
-      ray->rayPos(ray, *lambda, p);
-      // Get normal then update it
-      struct point3D temp_normal;
-      temp_normal.px = (impliSphere(temp_point.px+tolr, temp_point.py, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
-      temp_normal.py = (impliSphere(temp_point.px, temp_point.py+tolr, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
-      temp_normal.pz = (impliSphere(temp_point.px, temp_point.py, temp_point.pz+tolr) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
-      normalize(&temp_normal);
-      n->px = temp_normal.px;
-      n->py = temp_normal.py;
-      n->pz = temp_normal.pz;
-      n->pw = 1;
-      return;
-    }
-    else if ((distance < 0 && distance_origin > 0) || (distance > 0 && distance_origin < 0)) {
-      tmp_lam = tmp_lam - dl;
-      dl = dl / 2;
-    }
-    else {
-      tmp_lam += dl;
-    }
-    done++;
-  }
-  return;
 }
 
 /////////////////////////////////////////////////////////////////
@@ -673,7 +740,9 @@ void planeCoordinates(struct object3D *plane, double a, double b, double *x, dou
  
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+
+
 }
 
 void sphereCoordinates(struct object3D *sphere, double a, double b, double *x, double *y, double *z)
@@ -701,12 +770,22 @@ void cylCoordinates(struct object3D *cyl, double a, double b, double *x, double 
 void planeSample(struct object3D *plane, double *x, double *y, double *z)
 {
  // Returns the 3D coordinates (x,y,z) of a randomly sampled point on the plane
- // Sapling should be uniform, meaning there should be an equal change of gedtting
+ // Sampling should be uniform, meaning there should be an equal change of getting
  // any spot on the plane
 
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+ // generate a random number between -1 and 1
+ double newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+ double newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+ point3D *temp = newPoint(newx, newy, 0);
+ // transform the point
+ matVecMult(plane->T, temp);
+ *x = temp->px;
+ *y = temp->py;
+ *z = temp->pz;
+ free(temp);
 }
 
 void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
@@ -715,20 +794,56 @@ void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
  // Sampling should be uniform - note that this is tricky for a sphere, do some
  // research and document in your report what method is used to do this, along
  // with a reference to your source.
- 
+
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+// algorithm taken from: https://math.stackexchange.com/questions/1585975/how-to-generate-random-points-on-a-sphere
+double newx;
+double newy;
+double newz;
+// loop until x y z is not 0
+while (newx == 0 && newy == 0 && newz == 0) {
+ // generate x,y,z in [-1,1]
+ newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+ newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+ newz = (double)rand() / (double)RAND_MAX * 2 - 1;
+}
+// normalize the vector
+point3D *temp = newPoint(newx, newy, newz);
+normalize(temp);
+// transform the point
+matVecMult(sphere->T, temp);
+*x = temp->px;
+*y = temp->py;
+*z = temp->pz;
+free(temp);
 }
 
 void cylSample(struct object3D *cyl, double *x, double *y, double *z)
 {
- // Returns the 3D coordinates (x,y,z) of a randomly sampled point on the cylinder
- // Sampling should be uniform over the cylinder.
-
- /////////////////////////////////
- // TO DO: Complete this function.
- /////////////////////////////////   
+// Returns the 3D coordinates (x,y,z) of a randomly sampled point on the cylinder
+// Sampling should be uniform over the cylinder.
+/////////////////////////////////
+// TO DO: Complete this function.
+/////////////////////////////////
+// generate a int between 0 and 9
+double newx;
+double newy;
+double newz;
+while (newx == 0 && newy == 0) {
+    newx = (double) rand() / (double) RAND_MAX * 2 - 1;
+    newy = (double) rand() / (double) RAND_MAX * 2 - 1;
+}
+// normalize
+point3D *temp = newPoint(newx, newy, 0);
+normalize(temp);
+temp->pz = (double) rand() / (double) RAND_MAX * 2 - 1;
+matVecMult(cyl->T, temp);
+*x = temp->px;
+*y = temp->py;
+*z = temp->pz;
+free(temp);
 }
 
 
@@ -817,10 +932,12 @@ void texMap(struct image *img, double a, double b, double *R, double *G, double 
  // coordinates. Your code should use bi-linear
  // interpolation to obtain the texture colour.
  //////////////////////////////////////////////////
-
- *(R)=0;	// Returns black - delete this and
- *(G)=0;	// replace with your code to compute
- *(B)=0;	// texture colour at (a,b)
+ int x = (int) (a * (img->sx - 1));
+ int y = (int) (b * (img->sy - 1));
+ double* rgbdata = (double *) img->rgbdata;
+ *(R) = (double) *(rgbdata + ((y * img->sx) + x) * 3);
+ *(G) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 1);
+ *(B) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 2);
  return;
 }
 
