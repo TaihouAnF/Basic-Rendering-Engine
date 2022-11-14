@@ -167,18 +167,8 @@ struct refraction_ind_stk *newStackInstance(double entering_index) {
 // output: pointer to new stack copied from old stack
 struct refraction_ind_stk *stackCopy(struct refraction_ind_stk *stack_top) {
   if (!stack_top) return NULL;
-  struct refraction_ind_stk *current_stack_ins = stack_top->next; // starting from next
-  // struct refraction_ind_stk *new_stack_top = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
   struct refraction_ind_stk *new_stack_top = newStackInstance(stack_top->current_index);
-  // new_stack_top->current_index = stack_top->current_index;
-  new_stack_top->next = stack_top->next;  // make a copy of the stack top so that we can keep track of whole stacks
-  while (current_stack_ins) {             // while loop to copy the rest of the stack
-    // struct refraction_ind_stk *new_stack_ins = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
-    struct refraction_ind_stk *new_stack_ins = newStackInstance(current_stack_ins->current_index);
-    // new_stack_ins->current_index = current_stack_ins->current_index;
-    new_stack_ins->next = current_stack_ins->next;
-    current_stack_ins = current_stack_ins->next;
-  }
+  new_stack_top->next = stackCopy(stack_top->next);
   return new_stack_top;
 }
 

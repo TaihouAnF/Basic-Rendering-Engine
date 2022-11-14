@@ -10,7 +10,7 @@
 	g++ -O3 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_refraction.ppm
 
-% To test ray marching, we need new util.c and util.h and new buildscene_raymarching
+% To test ray marching, we need new util.c and util.h and new buildscene_raymarching TODO embed raymarching code in new util.c/.h
 	g++ -O3 -g svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
 
 % Added multithread

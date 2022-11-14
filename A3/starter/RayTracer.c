@@ -194,7 +194,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         if (obj->alb.rs > 0) {
             initRay(&reflection_ray, p, r_camera);
             reflection_ray.inside = ray->inside;
-            reflection_ray.ref_ind_stack = ray->ref_ind_stack;
+            reflection_ray.ref_ind_stack = stackCopy(ray->ref_ind_stack);
             reflection_ray.first_ray = ray->first_ray;
             rayTrace(&reflection_ray, depth + 1, &reflection_col, obj);
             // I = Il + Ig, Il could be only ambient or full phong model
@@ -210,17 +210,16 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             // First, we check the normal and incident ray direction
             struct point3D *refraction_direction = newPoint(n->px, n->py, n->pz);
             double c = dot(&(ray->d), n);
-            // printf("c now, first should be negative: %f\n", c);
             double r;
             int inside = ray->inside;
             int going_out = 0;
+            int going_in = 0;
             if (c <= 0) {
                 // The ray is *Outside* of the surface, it is about to enter
                 // so normal is the same, and we need to make c to be positive
                 c = -c;
                 r = ray->ref_ind_stack->current_index / obj->r_index;
-                struct refraction_ind_stk *new_stk_top = newStackInstance(obj->r_index);
-                ray->ref_ind_stack = stackInsert(new_stk_top, ray->ref_ind_stack);
+                going_in = 1;
                 inside = 1;
             } else if(c > 0 && inside) {
                 // The ray is *Inside* of the surface since c is positive, and we 
@@ -233,6 +232,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 refraction_direction->pz = -refraction_direction->pz;
                 going_out = 1;
             } else {
+                stackFree(ray->ref_ind_stack);
                 return;
             }
             //  1 - sqrt(1 - r^2*(1 - c^2))
@@ -252,17 +252,19 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 // dt = rb + (rc - sqrt(1 - r^2*(1 - c^2)))n b=a+b
                 addVectors(temp_incident_ray_d, refraction_direction);
                 normalize(refraction_direction);
-                struct point3D *refraction_point = newPoint(p->px, p->py, p->pz);
-                memcpy(&refraction_ray.p0, refraction_point, sizeof(struct point3D));
-                memcpy(&refraction_ray.d, refraction_direction, sizeof(struct point3D));
-                refraction_ray.rayPos = &rayPosition;
+                // struct point3D *refraction_point = newPoint(p->px, p->py, p->pz);
+                initRay(&refraction_ray, p, refraction_direction);
                 if (going_out) {
                     refraction_ray.inside = 0;
-                    stackPop(refraction_ray.ref_ind_stack);
-                } else {
+                    refraction_ray.ref_ind_stack = stackPop(ray->ref_ind_stack);
+                } else if (going_in) {
                     refraction_ray.inside = inside;
+                    struct refraction_ind_stk *new_stack_top = newStackInstance(obj->r_index);
+                    refraction_ray.ref_ind_stack = stackInsert(new_stack_top, ray->ref_ind_stack);
+                } else {
+                    stackFree(ray->ref_ind_stack);
+                    return;
                 }
-                refraction_ray.ref_ind_stack = ray->ref_ind_stack;
                 refraction_ray.first_ray = 0;
                 rayTrace(&refraction_ray, depth + 1, &refraction_col, obj);
                 tmp_col.R *= obj->alpha;
@@ -273,7 +275,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 tmp_col.G += ((1 - obj->alpha) * refraction_col.G);
                 tmp_col.B += ((1 - obj->alpha) * refraction_col.B);
                 free(temp_incident_ray_d);
-                free(refraction_point);
+                // free(refraction_point);
             }
             free(refraction_direction);
         }
@@ -286,6 +288,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
     col->B = (tmp_col.B > 1.0) ? 1.0 : tmp_col.B;
     free(r_camera);
     free(camera_dir);
+    stackFree(ray->ref_ind_stack);
     return;
 }
 
@@ -564,7 +567,7 @@ int main(int argc, char *argv[])
     printmatrix(cam->W2C);
     fprintf(stderr,"\n");
 
-//#pragma omp parallel for schedule(dynamic,32) private(ray)
+#pragma omp parallel for schedule(dynamic,32) private(ray, col, pc, d, i, j, sum_color, temp_color)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
         fprintf(stderr,"%d/%d, ",j,sx);
