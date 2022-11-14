@@ -224,7 +224,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             } else if(c > 0 && inside) {
                 // The ray is *Inside* of the surface since c is positive, and we 
                 // need to flip the normal(refraction_direction) in this case
-                if (!ray->ref_ind_stack->next) return;
+                if (!ray->ref_ind_stack || !ray->ref_ind_stack->next) return;
                 double leaving = ray->ref_ind_stack->current_index;
                 r = leaving / ray->ref_ind_stack->next->current_index;
                 refraction_direction->px = -refraction_direction->px;
@@ -245,14 +245,10 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 refraction_direction->py *= coeff;
                 refraction_direction->pz *= coeff;
                 // rb
-                struct point3D *temp_incident_ray_d = newPoint(ray->d.px, ray->d.py, ray->d.pz);
-                temp_incident_ray_d->px *= r;
-                temp_incident_ray_d->py *= r;
-                temp_incident_ray_d->pz *= r;
+                struct point3D *temp_incident_ray_d = newPoint(r * ray->d.px, r * ray->d.py, r * ray->d.pz);
                 // dt = rb + (rc - sqrt(1 - r^2*(1 - c^2)))n b=a+b
                 addVectors(temp_incident_ray_d, refraction_direction);
                 normalize(refraction_direction);
-                // struct point3D *refraction_point = newPoint(p->px, p->py, p->pz);
                 initRay(&refraction_ray, p, refraction_direction);
                 if (going_out) {
                     refraction_ray.inside = 0;
@@ -275,7 +271,6 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
                 tmp_col.G += ((1 - obj->alpha) * refraction_col.G);
                 tmp_col.B += ((1 - obj->alpha) * refraction_col.B);
                 free(temp_incident_ray_d);
-                // free(refraction_point);
             }
             free(refraction_direction);
         }
@@ -567,7 +562,7 @@ int main(int argc, char *argv[])
     printmatrix(cam->W2C);
     fprintf(stderr,"\n");
 
-#pragma omp parallel for schedule(dynamic,32) private(ray, col, pc, d, i, j, sum_color, temp_color)
+#pragma omp parallel for schedule(dynamic,128) private(ray, col, i, j, sum_color, temp_color)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
         fprintf(stderr,"%d/%d, ",j,sx);
