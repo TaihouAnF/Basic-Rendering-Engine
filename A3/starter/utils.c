@@ -162,23 +162,61 @@ struct refraction_ind_stk *newStackInstance(double entering_index) {
   return newEntry;
 }
 
+// Create a new stack by copying old stack, will combine with pop or insert
+// input: old stack top
+// output: pointer to new stack copied from old stack
+struct refraction_ind_stk *stackCopy(struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return NULL;
+  struct refraction_ind_stk *current_stack_ins = stack_top->next; // starting from next
+  // struct refraction_ind_stk *new_stack_top = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
+  struct refraction_ind_stk *new_stack_top = newStackInstance(stack_top->current_index);
+  // new_stack_top->current_index = stack_top->current_index;
+  new_stack_top->next = stack_top->next;  // make a copy of the stack top so that we can keep track of whole stacks
+  while (current_stack_ins) {             // while loop to copy the rest of the stack
+    // struct refraction_ind_stk *new_stack_ins = (struct refraction_ind_stk *)malloc(sizeof(struct refraction_ind_stk));
+    struct refraction_ind_stk *new_stack_ins = newStackInstance(current_stack_ins->current_index);
+    // new_stack_ins->current_index = current_stack_ins->current_index;
+    new_stack_ins->next = current_stack_ins->next;
+    current_stack_ins = current_stack_ins->next;
+  }
+  return new_stack_top;
+}
+
 // Insert a stack instance to current stack(linked-list), current stack top 
 // would become new stack top's next, and return a pointer to the new Stack
-// input: a pointer to new stack instance
+// input: a pointer to new stack instance(not a whole stack)
 //        pointer to current stack top(which contains links to whole stack)
 // output: a pointer to new stack top, containing the whole stack
 struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, struct refraction_ind_stk *stack_top) {
-  if (!stack_top) return new_instance;
-  new_instance->next = stack_top;
-  return new_instance;
+  if (!stack_top) return stackCopy(new_instance);
+  if (new_instance->next) {
+    printf("Oops, we don't support that!\n");
+    return stack_top;
+  }
+  struct refraction_ind_stk *new_stack_top = new_instance;
+  new_stack_top->next = stackCopy(stack_top);
+  return new_stack_top;
 }
 
 // Pop the top of the stack, while still preserve the rest of the stack
 // input: the pointer of the current stack top
 // output: a double of the index from stack instance popped
-void stackPop(struct refraction_ind_stk *current_stack) {
-  if (!current_stack) return;
-  current_stack = current_stack->next;
+struct refraction_ind_stk *stackPop(struct refraction_ind_stk *current_stack) {
+  if (!current_stack) return NULL;
+  struct refraction_ind_stk *new_stack_top = stackCopy(current_stack->next);
+  return new_stack_top;
+}
+
+// Free the whole stack, will be used at the end of the rtShade
+// input: the pointer to the stack
+void stackFree(struct refraction_ind_stk *stack_top) {
+  if (!stack_top) return;
+  struct refraction_ind_stk *current_stk_ins;
+  while (stack_top) {
+    current_stk_ins = stack_top;
+    stack_top = stack_top->next;
+    free(current_stk_ins);
+  }
   return;
 }
 

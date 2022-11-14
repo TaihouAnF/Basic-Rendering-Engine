@@ -225,6 +225,7 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
             } else if(c > 0 && inside) {
                 // The ray is *Inside* of the surface since c is positive, and we 
                 // need to flip the normal(refraction_direction) in this case
+                if (!ray->ref_ind_stack->next) return;
                 double leaving = ray->ref_ind_stack->current_index;
                 r = leaving / ray->ref_ind_stack->next->current_index;
                 refraction_direction->px = -refraction_direction->px;

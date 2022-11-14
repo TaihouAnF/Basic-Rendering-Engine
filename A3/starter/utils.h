@@ -150,8 +150,10 @@ struct pointLS *newPLS(struct point3D *p0, double r, double g, double b);
 
 // Refraction index stack
 struct refraction_ind_stk *newStackInstance(double entering_index);
+struct refraction_ind_stk *stackCopy(struct refraction_ind_stk *stack_top);
 struct refraction_ind_stk *stackInsert(struct refraction_ind_stk *new_instance, struct refraction_ind_stk *stack_top);
-void stackPop(struct refraction_ind_stk *current_stack);
+struct refraction_ind_stk *stackPop(struct refraction_ind_stk *current_stack);
+void stackFree(struct refraction_ind_stk *stack_top);
 
 // Ray management inlines
 inline void rayPosition(struct ray3D *ray, double lambda, struct point3D *pos)
