@@ -1,22 +1,38 @@
 % To run tests, we need to select buildscenes for each feature, for e.g. buildscene_refraction is 
-% for testing refraction,and if we need to test them, we have to rename the buildscene_*feature_name* 
+% for testing refraction, and if we need to test them, we have to rename the buildscene_*feature_name*.c 
 % to be buildscene.c and put it under the same folder as raytracer.c etc
 
 % Added multithread
+
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 
-% Testing origin buildscene, which including area LS is being visible, use buildscene_original_1:
+% Testing origin buildscene_1, which including area LS is being visible, use "buildscene_original_1.c":
+
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
-	./Raytracer 1024 5 0 test_origin.ppm
+	./Raytracer 1024 5 0 test_original_1.ppm
+
+% Testing origin buildscene_2, which including soft shadow, use "buildscene_original_2.c":
+
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+	./Raytracer 1024 5 0 test_original_2.ppm
 
 % To run testing for "antialiasing": use same buildscene: 
+
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
  	./Raytracer 1024 5 1 test_antialiasing.ppm
 
-% Test "refraction", use buildscene_refraction, this runs about 5min with multithreading
+% Test "refraction", use "buildscene_refraction.c", this runs about 5min with multithreading
+
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_refraction.ppm
 
-% To test ray marching, we need new util.c and util.h and use buildscene_raymarching
+% To test ray marching, we need utils_raymarching.c and utils_raymarching.h,
+% RayTracer_raymarching.c and RayTracer_raymarching.h, and use "buildscene_raymarching.c"
+
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_raymarching.ppm
+
+% To get full final scene, use "buildscene.c" that originally in the root folder
+
+	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
+	./RayTracer 1024 5 1 full.ppm
