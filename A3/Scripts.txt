@@ -28,6 +28,9 @@
 
 % To test ray marching, we need utils_raymarching.c, utils_raymarching.h,
 % RayTracer_raymarching.c and RayTracer_raymarching.h, and use "buildscene_raymarching.c"
+% New function are called "rayMarchingSphere()", starting from line 373 to 417 in utils_raymarching.c,
+% new implicit surface can be added by creating new implicit function then use it in a new rayMarching
+% function, function body and process will be the same, the only difference is the implicit function.
 
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_raymarching.ppm
