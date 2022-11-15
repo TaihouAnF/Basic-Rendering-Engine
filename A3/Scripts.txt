@@ -2,28 +2,28 @@
 % for testing refraction, and if we need to test them, we have to rename the buildscene_*feature_name*.c 
 % to be buildscene.c and put it under the same folder as raytracer.c etc
 
-% Added multithread
+% Added multithread, to enable it, add "-fopenmp" before any code files
 
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 
 % Testing origin buildscene_1, which including area LS is being visible, use "buildscene_original_1.c":
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
 	./Raytracer 1024 5 0 test_original_1.ppm
 
 % Testing origin buildscene_2, which including soft shadow, use "buildscene_original_2.c":
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
 	./Raytracer 1024 5 0 test_original_2.ppm
 
 % To run testing for "antialiasing": use same buildscene: 
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
  	./Raytracer 1024 5 1 test_antialiasing.ppm
 
 % Test "refraction", use "buildscene_refraction.c", this runs about 5min with multithreading
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_refraction.ppm
 
 % To test ray marching, we need utils_raymarching.c, utils_raymarching.h,
@@ -32,11 +32,11 @@
 % new implicit surface can be added by creating new implicit function then use it in a new rayMarching
 % function, function body and process will be the same, the only difference is the implicit function.
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
+	g++ -O4 -g svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_raymarching.ppm
 
 % To get full final scene, use "buildscene.c" that originally in the root folder, 
 % it takes about ~16 to 17 mins to run on mathlab machine
 
-	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 full.ppm
