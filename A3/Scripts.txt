@@ -26,13 +26,14 @@
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_refraction.ppm
 
-% To test ray marching, we need utils_raymarching.c and utils_raymarching.h,
+% To test ray marching, we need utils_raymarching.c, utils_raymarching.h,
 % RayTracer_raymarching.c and RayTracer_raymarching.h, and use "buildscene_raymarching.c"
 
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer_raymarching.c utils_raymarching.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_raymarching.ppm
 
-% To get full final scene, use "buildscene.c" that originally in the root folder
+% To get full final scene, use "buildscene.c" that originally in the root folder, 
+% it takes about ~16 to 17 mins to run on mathlab machine
 
 	g++ -O4 -g -fopenmp svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 full.ppm

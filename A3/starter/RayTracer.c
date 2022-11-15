@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
     printmatrix(cam->W2C);
     fprintf(stderr,"\n");
 
-#pragma omp parallel for schedule(dynamic,128) private(ray, col, i, j, sum_color, temp_color)
+#pragma omp parallel for schedule(dynamic,1) private(ray, col, i, j, sum_color, temp_color)
     for (j=0;j<sx;j++)		// For each of the pixels in the image
     {
         fprintf(stderr,"%d/%d, ",j,sx);
