@@ -33,38 +33,19 @@
 
  // Note the parameters: ra, rd, rs, rg, R, G, B, alpha, r_index, and shinyness)
 
-o=newSphere(.05,.95,.95,.75,1,1,1,0.1,2,6);
+o=newSphere(.05,.95,.95,.75,1,1,1,1,1,6);
 Translate(o,0,0,1);
 invert(&o->T[0][0],&o->Tinv[0][0]);
-insertObject(o,&object_list);
-
-o=newSphere(.05,.95,.95,.75,1,0,1,0.5,1.5,6);
-Translate(o,-2.5,2.5,2);
-invert(&o->T[0][0],&o->Tinv[0][0]);
-insertObject(o,&object_list);
-
-o=newSphere(.05,.95,.95,.75,1,0,1,0.5,1.5,6);
-Translate(o,2.5,-2.5,2);
-invert(&o->T[0][0],&o->Tinv[0][0]);
-insertObject(o,&object_list);
-
-o=newSphere(.05,.95,.95,.75,0,1,0,0.5,1.5,6);
-Translate(o,2.5,2.5,2);
-invert(&o->T[0][0],&o->Tinv[0][0]);
-insertObject(o,&object_list);
-
-o=newSphere(.05,.95,.95,.75,0,1,0,0.5,1.5,6);
-Translate(o,-2.5,-2.5,2);
-invert(&o->T[0][0],&o->Tinv[0][0]);
+loadTexture(o, "./Texture/testTex.ppm", 1, &texture_list);
 insertObject(o,&object_list);
 
 o=newPlane(.05,.75,.05,.05,1,0,0,1,1,2);
 Scale(o,11,11,11);
-Translate(o,0,0,6);
+RotateZ(o,PI/4);
+RotateX(o,PI/2);
+Translate(o,0,-4,5);
 invert(&o->T[0][0],&o->Tinv[0][0]);
-loadTexture(o, "./Texture/ripple.ppm", 1, &texture_list);
-loadTexture(o, "./Texture/rippleNormal.ppm", 2, &texture_list);
-o->normalMapped = 1;
+loadTexture(o, "./Texture/textureG.ppm", 1, &texture_list);
 insertObject(o,&object_list);
 
  // add a cylinder

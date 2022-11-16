@@ -1,0 +1,48 @@
+1a. 1/1
+
+1b. 1/1
+
+1c. 2/2
+
+1d. 3/3
+
+1e. 3/3
+
+2a. 3/3
+
+2b. 2/3
+    Incorrect normal
+
+2c. 2.5/3
+    Rotation is not communitive, you switched the angles φ and θ. Z-axis is facing up
+
+Directional Light Source. 2/2
+
+Point Light Source. 2/2
+
+Intersection With Circle. 2/2
+
+Intersection With Walls. 2/2
+
+Reflection With Circle and Walls. 1/2
+    Some rays refract into a reflective object
+
+Refraction With Circles. 2/3
+    Inncorrect refraction angles
+
+Recursive Light Propagation. 3/3
+
+Render Cool Scene. 6/4
+
+Crunchy:
+
+Dispersion. 0/3
+
+SPD. 0/3
+
+Coloured Objects. 0/2
+
+Total: 34.5/39
+
+Deductions:
+    -3 missing team aggreement

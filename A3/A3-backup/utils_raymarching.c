@@ -394,9 +394,9 @@ void rayMarchingSphere(struct object3D *implicit_surf, struct ray3D *ray, double
       ray->rayPos(ray, *lambda, p);
       // Get normal then update it
       struct point3D temp_normal;
-      temp_normal.px = -(impliSphere(temp_point.px+tolr, temp_point.py, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
-      temp_normal.py = -(impliSphere(temp_point.px, temp_point.py+tolr, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
-      temp_normal.pz = -(impliSphere(temp_point.px, temp_point.py, temp_point.pz+tolr) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      temp_normal.px = (impliSphere(temp_point.px+tolr, temp_point.py, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      temp_normal.py = (impliSphere(temp_point.px, temp_point.py+tolr, temp_point.pz) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
+      temp_normal.pz = (impliSphere(temp_point.px, temp_point.py, temp_point.pz+tolr) - impliSphere(temp_point.px, temp_point.py, temp_point.pz)) / tolr;
       normalize(&temp_normal);
       n->px = temp_normal.px;
       n->py = temp_normal.py;

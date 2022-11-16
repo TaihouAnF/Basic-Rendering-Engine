@@ -21,10 +21,18 @@
 	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer 
  	./Raytracer 1024 5 1 test_antialiasing.ppm
 
+% To test "texture mapping", use buildscene_textmap.c
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
+	./Raytracer 1024 5 1 test_textmap.ppm
+
 % Test "refraction", use "buildscene_refraction.c", this runs about 5min with multithreading
 
 	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
 	./RayTracer 1024 5 1 test_refraction.ppm
+
+% To test "normal mapping", use buildscene_normalmap.c
+	g++ -O4 -g svdDynamic.c RayTracer.c utils.c -lm -o RayTracer
+	./Raytracer 1024 5 1 test_normalmap.ppm
 
 % To test ray marching, we need utils_raymarching.c, utils_raymarching.h,
 % RayTracer_raymarching.c and RayTracer_raymarching.h, and use "buildscene_raymarching.c"
