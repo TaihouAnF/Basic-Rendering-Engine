@@ -62,7 +62,9 @@ o=newPlane(.05,.75,.05,.05,1,0,0,1,1,2);
 Scale(o,11,11,11);
 Translate(o,0,0,6);
 invert(&o->T[0][0],&o->Tinv[0][0]);
-loadTexture(o, "./Texture/textureG.ppm", 1, &texture_list);
+loadTexture(o, "./Texture/ripple.ppm", 1, &texture_list);
+loadTexture(o, "./Texture/rippleNormal.ppm", 2, &texture_list);
+o->normalMapped = 1;
 insertObject(o,&object_list);
 
  // add a cylinder

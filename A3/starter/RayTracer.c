@@ -100,6 +100,18 @@ void rtShade(struct object3D *obj, struct point3D *p, struct point3D *n, struct 
         obj->textureMap(obj->texImg,a,b,&R,&G,&B);
     }
 
+    if (obj->normalMapped)
+    {
+        // handle if the object is normal mapped
+        image *normalmap = obj->normalMap;
+        int x = (int) (a * (normalmap->sx - 1));
+        int y = (int) (b * (normalmap->sy - 1));
+        double* normaldata = (double *) normalmap->rgbdata;
+        n->px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
+        n->py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
+        n->pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
+    }
+
     //////////////////////////////////////////////////////////////
     // TO DO: Implement this function. Refer to the notes for
     // details about the shading model.
