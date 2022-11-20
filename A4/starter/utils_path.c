@@ -250,11 +250,12 @@ struct object3D *newCyl(double diffPct, double reflPct, double tranPct, double r
         cylinder->isCSG = 0;
         cylinder->isLightSource = 0;
         cylinder->CSGnext = NULL;
-        cylinder->next = NULL; }
-        return(cylinder);
+        cylinder->next = NULL; 
     }
-  
+        return(cylinder);
 }
+  
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////
@@ -269,9 +270,42 @@ void planeIntersect(struct object3D *plane, struct ray3D *ray, double *lambda, s
  // between the specified ray and the specified canonical plane.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
-   
+    struct ray3D deformed_ray;
+    rayTransform(ray, &deformed_ray, plane);
+
+    struct point3D *temp_plane_point;
+    temp_plane_point = newPoint(1, 1, 0);
+    struct point3D *temp_plane_normal;
+    temp_plane_normal = newPoint(0, 0, 1);
+
+    subVectors(&(deformed_ray.p0), temp_plane_point);
+    double up = dot(temp_plane_point, temp_plane_normal);
+    double down = dot(&(deformed_ray.d), temp_plane_normal);
+
+    if (down != 0) {
+        double temp_intersect_lambda = up / down;
+        if (temp_intersect_lambda > 0) {
+            struct point3D temp_intersect_point;
+            deformed_ray.rayPos(&deformed_ray, temp_intersect_lambda, &temp_intersect_point);
+            if (temp_intersect_point.px > -1.0 && temp_intersect_point.px < 1.0 && 
+                temp_intersect_point.py > -1.0 && temp_intersect_point.py < 1.0) {
+                *lambda = temp_intersect_lambda;
+                struct point3D temp_intersect_point_transform;
+                ray->rayPos(ray, temp_intersect_lambda, &temp_intersect_point_transform);
+                *p = temp_intersect_point_transform;
+                
+                struct point3D temp_plane_normal_transform;
+                normalTransform(temp_plane_normal, &temp_plane_normal_transform, plane);
+                *n = temp_plane_normal_transform;
+                *a = (temp_intersect_point.px + 1.0) / 2.0;
+                *b = (temp_intersect_point.py + 1.0) / 2.0;
+            }
+        }
+    }
+    free(temp_plane_point);
+    free(temp_plane_normal);
 }
 
 void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -280,9 +314,43 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
  // between the specified ray and the specified canonical sphere.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
-    
+    struct ray3D deformed_ray;
+    rayTransform(ray, &deformed_ray, sphere);
+
+    double A = dot(&deformed_ray.d, &deformed_ray.d);
+    double B = dot(&deformed_ray.p0, &deformed_ray.d);
+    double C = dot(&deformed_ray.p0, &deformed_ray.p0) - 1.0;
+    double D = (B * B) - (A * C);
+    if (D == 0) {
+        *lambda = - (B / A);
+    } else if (D > 0) {
+        double lambda_1 = -(B / A) + (sqrt(D) / A);
+        double lambda_2 = -(B / A) - (sqrt(D) / A);
+        if (lambda_2 >= lambda_1 && lambda_1 > 0.0) {
+            *lambda = lambda_1;
+        } else if (lambda_1 > lambda_2 && lambda_2 > 0.0) {
+            *lambda = lambda_2;
+        } else if (lambda_1 > 0.0) {
+            *lambda = lambda_1;
+        } else if (lambda_2 > 0.0) {
+            *lambda = lambda_2;
+        }
+    }
+
+    if (*lambda > 0.0) {
+        struct point3D temp_intersect_point_transform;
+        ray->rayPos(ray, *lambda, &temp_intersect_point_transform);
+        *p = temp_intersect_point_transform;
+        struct point3D temp_sphere_normal;
+        deformed_ray.rayPos(&deformed_ray, *lambda, &temp_sphere_normal);
+        struct point3D temp_sphere_normal_transform;
+        normalTransform(&temp_sphere_normal, &temp_sphere_normal_transform, sphere);
+        *n = temp_sphere_normal_transform;
+        *a = 0.5 + asin(temp_sphere_normal.py) / PI;
+        *b = 0.5 + atan2(temp_sphere_normal.px, temp_sphere_normal.pz) / (2 * PI);
+    }
 }
 
 void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
