@@ -353,14 +353,142 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
     }
 }
 
-void cylIntersect(struct object3D *cylinder, struct ray3D *r, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
+void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, struct point3D *p, struct point3D *n, double *a, double *b)
 {
  // Computes and returns the value of 'lambda' at the intersection
  // between the specified ray and the specified canonical cylinder.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////  
+    struct ray3D deformed_ray;
+    rayTransform(ray, &deformed_ray, cylinder);
+    
+    struct ray3D deformed_ray_without_z;
+    deformed_ray_without_z = deformed_ray;
+    deformed_ray_without_z.p0.pz = 0;
+    deformed_ray_without_z.p0.pw = 1;
+    deformed_ray_without_z.d.pz = 0;
+    deformed_ray_without_z.d.pw = 0;
+
+    double A = dot(&deformed_ray_without_z.d, &deformed_ray_without_z.d);
+    double B = 2 * dot(&deformed_ray_without_z.d, &deformed_ray_without_z.p0);
+    double C = dot(&deformed_ray_without_z.p0, &deformed_ray_without_z.p0) - 1;
+    double D = (B * B) - (4 * A * C);
+
+    double lambda_wall = -1.0;
+    if (D == 0) {
+        lambda_wall = -B / (2 * A);
+    } else if (D > 0) {
+        double lambda_w1 = (-B + sqrt(D)) / (2 * A);
+        double lambda_w2 = (-B - sqrt(D)) / (2 * A);
+        if (lambda_w1 > 0.0 && lambda_w2 > 0.0) {
+            lambda_wall = (lambda_w1 <= lambda_w2) ? lambda_w1 : lambda_w2;
+        } else if (lambda_w1 > 0.0 && lambda_w2 < 0.0) {
+            lambda_wall = lambda_w1;
+        } else if (lambda_w2 > 0.0 && lambda_w1 < 0.0) {
+            lambda_wall = lambda_w2;
+        }
+    }
+
+    struct point3D temp_cylinder_point_wall;
+    deformed_ray.rayPos(&deformed_ray, lambda_wall, &temp_cylinder_point_wall);
+    if (temp_cylinder_point_wall.pz < -1.0 ||
+        temp_cylinder_point_wall.pz > 1.0) {
+        lambda_wall = -1.0;
+    }
+
+    double lambda_cap_base = -1.0;
+    double temp_lambda_cap = (1.0 - deformed_ray.p0.pz) / deformed_ray.d.pz;
+    double temp_lambda_base = (-1.0 - deformed_ray.p0.pz) / deformed_ray.d.pz;
+    double temp_small = -1.0;
+    double temp_large = -1.0;
+    bool both = false;
+    bool cap = false;
+
+    if (temp_lambda_base > 0.0 && temp_lambda_cap > 0.0) {
+        if (temp_lambda_base <= temp_lambda_cap) {
+            temp_small = temp_lambda_base;
+            temp_large = temp_lambda_cap;
+            cap = false;
+        } else {
+            temp_small = temp_lambda_cap;
+            temp_large = temp_lambda_base;
+            cap = true;
+        }
+        both = true;
+    } else if (temp_lambda_base > 0.0 && temp_lambda_cap < 0.0) {
+        temp_small = temp_lambda_base;
+        cap = false;
+    } else if (temp_lambda_cap > 0.0 && temp_lambda_base < 0.0) {
+        temp_small = temp_lambda_cap;
+        cap = true;
+    }
+
+    struct point3D temp_cylinder_point_cap;
+    if (both) {
+        deformed_ray.rayPos(&deformed_ray, temp_small, &temp_cylinder_point_cap);
+        if (pow(temp_cylinder_point_cap.px, 2) +
+            pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+                lambda_cap_base = temp_small;
+        } else {
+            deformed_ray.rayPos(&deformed_ray, temp_large, &temp_cylinder_point_cap);
+            if (pow(temp_cylinder_point_cap.px, 2) +
+                pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+                lambda_cap_base = temp_large;
+                cap = !cap;
+            }
+        }
+    } else {
+        deformed_ray.rayPos(&deformed_ray, temp_small, &temp_cylinder_point_cap);
+        if (pow(temp_cylinder_point_cap.px, 2) +
+            pow(temp_cylinder_point_cap.py, 2) < 1.0) {
+            lambda_cap_base = temp_small;
+        }
+    }
+
+    if ((lambda_wall > lambda_cap_base && lambda_cap_base > 0.0) ||
+        (lambda_cap_base > 0.0 && lambda_wall < 0.0)) {
+        *lambda = lambda_cap_base;
+        
+        struct point3D temp_intersect_point_transform;
+        ray->rayPos(ray, lambda_cap_base, &temp_intersect_point_transform);
+        *p = temp_intersect_point_transform;
+
+        struct point3D *temp_cylinder_cap_normal;
+        if (cap) {
+            temp_cylinder_cap_normal = newPoint(0, 0, 1);
+        } else {
+            temp_cylinder_cap_normal = newPoint(0, 0, -1);
+        }
+        
+        struct point3D temp_nor_transfrom;
+        normalTransform(temp_cylinder_cap_normal, &temp_nor_transfrom, cylinder);
+        *n = temp_nor_transfrom;
+        *a = (atan2(temp_cylinder_point_cap.px, temp_cylinder_point_cap.py) / (2 * PI)) + 0.5;
+        *b = fabs(temp_cylinder_point_cap.pz);
+        free(temp_cylinder_cap_normal);
+    } else if ((lambda_cap_base >= lambda_wall && lambda_wall > 0.0) ||
+               (lambda_wall > 0.0 && lambda_cap_base < 0.0)) {
+        *lambda = lambda_wall;
+        
+        struct point3D temp_intersect_point_transform;
+        ray->rayPos(ray, lambda_wall, &temp_intersect_point_transform);
+        *p = temp_intersect_point_transform;
+        
+        struct point3D temp_cylinder_wall_normal;
+        deformed_ray.rayPos(&deformed_ray, lambda_wall, &temp_cylinder_wall_normal);
+        temp_cylinder_wall_normal.pz = 0;
+        temp_cylinder_wall_normal.pw = 1;
+        normalize(&temp_cylinder_wall_normal);
+        struct point3D temp_nor_transform;
+        normalTransform(&temp_cylinder_wall_normal, &temp_nor_transform, cylinder);
+        *n = temp_nor_transform;
+        *a = (atan2(temp_cylinder_point_wall.px, temp_cylinder_point_wall.py) / (2 * PI)) + 0.5;
+        *b = fabs(temp_cylinder_point_wall.pz);
+    } else {
+        return;
+    }
 }
 
 /////////////////////////////////////////////////////////////////
@@ -406,9 +534,18 @@ void planeSample(struct object3D *plane, double *x, double *y, double *z)
  // any spot on the plane
 
  /////////////////////////////////
- // TO DO: Complete this function.
- /////////////////////////////////   
-
+ // TO DO: Complete this function. Done
+ /////////////////////////////////  
+    // generate a random number between -1 and 1
+    double newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+    double newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+    struct point3D *temp = newPoint(newx, newy, 0);
+    // transform the point
+    matVecMult(plane->T, temp);
+    *x = temp->px;
+    *y = temp->py;
+    *z = temp->pz;
+    free(temp);
 }
 
 void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
@@ -419,9 +556,26 @@ void sphereSample(struct object3D *sphere, double *x, double *y, double *z)
  // with a reference to your source.
  
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
-    
+    // algorithm taken from: https://math.stackexchange.com/questions/1585975/how-to-generate-random-points-on-a-sphere
+    double newx, newy, newz;
+    // loop until x y z is not 0
+    while (newx == 0 && newy == 0 && newz == 0) {
+        // generate x,y,z in [-1,1]
+        newx = (double)rand() / (double)RAND_MAX * 2 - 1;
+        newy = (double)rand() / (double)RAND_MAX * 2 - 1;
+        newz = (double)rand() / (double)RAND_MAX * 2 - 1;
+    }
+    // normalize the vector
+    struct point3D *temp = newPoint(newx, newy, newz);
+    normalize(temp);
+    // transform the point
+    matVecMult(sphere->T, temp);
+    *x = temp->px;
+    *y = temp->py;
+    *z = temp->pz;
+    free(temp);   
 }
 
 void cylSample(struct object3D *cyl, double *x, double *y, double *z)
@@ -431,7 +585,33 @@ void cylSample(struct object3D *cyl, double *x, double *y, double *z)
 
  /////////////////////////////////
  // TO DO: Complete this function.
- /////////////////////////////////   
+ /////////////////////////////////
+    double newx, newy, newz;
+    struct point3D *temp;
+    newz = (double) rand() / (double) RAND_MAX * 2 - 1;
+    if (fabs(newz - 1) < 0.0000001 || fabs(newz + 1) < 0.0000001) {
+        newx = (double) rand() / (double) RAND_MAX * 2 - 1;
+        newy = (double) rand() / (double) RAND_MAX * 2 - 1;
+        while ((newx * newx) + (newy * newy) >= 1.0) {
+            newx = (double) rand() / (double) RAND_MAX * 2 - 1;
+            newy = (double) rand() / (double) RAND_MAX * 2 - 1;
+        }
+        temp = newPoint(newx, newy, newz);
+        matVecMult(cyl->T, temp);
+    } else {
+        while (newx == 0 && newy == 0) {
+            newx = (double) rand() / (double) RAND_MAX * 2 - 1;
+            newy = (double) rand() / (double) RAND_MAX * 2 - 1;
+        }
+        temp = newPoint(newx, newy, 0);
+        normalize(temp);
+        temp->pz = newz;
+        matVecMult(cyl->T, temp);
+    }
+    *x = temp->px;
+    *y = temp->py;
+    *z = temp->pz;
+    free(temp);   
 }
 
 //////////////////////////////////
