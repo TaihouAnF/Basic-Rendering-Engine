@@ -67,8 +67,16 @@ inline void rayTransform(struct ray3D *ray_orig, struct ray3D *ray_transformed, 
  // use the intersection test for the canonical object. Note that this has to be done carefully!
 
  ///////////////////////////////////////////
- // TO DO: Complete this function
+ // TO DO: Complete this function Done
  ///////////////////////////////////////////
+    ray_transformed->p0 = ray_orig->p0;
+    ray_transformed->p0.pw = 1;
+    matVecMult(obj->Tinv, &(ray_transformed->p0));
+
+    ray_transformed->d = ray_orig->d;
+    ray_transformed->d.pw = 0;
+    matVecMult(obj->Tinv, &(ray_transformed->d));
+    ray_transformed->rayPos = ray_orig->rayPos;
   
 }
 
@@ -79,9 +87,26 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
  // n_transformed=A^-T*n normalized.
 
  ///////////////////////////////////////////
- // TO DO: Complete this function
+ // TO DO: Complete this function Done
  ///////////////////////////////////////////
-    
+    *n_transformed = *n_orig;
+    n_transformed->pw = 1;
+
+    // Make transpose of Tinv
+    double transpose_Tinv[4][4];
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            transpose_Tinv[i][j] = obj->Tinv[j][i];
+        }
+    }
+
+    matVecMult(transpose_Tinv, n_transformed);
+    n_transformed->px = n_transformed->px - transpose_Tinv[0][3];
+    n_transformed->py = n_transformed->py - transpose_Tinv[1][3];
+    n_transformed->pz = n_transformed->pz - transpose_Tinv[2][3];
+    n_transformed->pw = 1; 
+
+    normalize(n_transformed);  
 }
 
 /////////////////////////////////////////////
@@ -196,6 +221,38 @@ struct object3D *newCyl(double diffPct, double reflPct, double tranPct, double r
  // TO DO:
  //	Complete the code to create and initialize a new cylinder object.
  ///////////////////////////////////////////////////////////////////////////////////////  
+    struct object3D *cylinder = (struct object3D *)calloc(1, sizeof(struct object3D));
+    if(!cylinder) fprintf(stderr, "Unable to allocate new Cylinder, out of memory.\n");
+    else 
+    {
+        cylinder->alb.ra = ra;
+        cylinder->alb.rd = rd;
+        cylinder->alb.rs = rs;
+        cylinder->alb.rg = rg;
+        cylinder->col.R = r;
+        cylinder->col.G = g;
+        cylinder->col.B = b;
+        cylinder->alpha = alpha;
+        cylinder->r_index = R_index;
+        cylinder->shinyness = shiny;
+        cylinder->intersect = &cylIntersect;
+        cylinder->surfaceCoords = &cylCoordinates;
+        cylinder->randomPoint = &cylSample;
+        cylinder->texImg = NULL;
+        cylinder->photonMap = NULL;
+        cylinder->normalMap = NULL;
+        memcpy(&cylinder->T[0][0], &eye4x4[0][0], 16 * sizeof(double));
+        memcpy(&cylinder->Tinv[0][0], &eye4x4[0][0], 16 * sizeof(double));
+        cylinder->textureMap = &texMap;
+        cylinder->frontAndBack = 0;
+        cylinder->photonMapped = 0;
+        cylinder->normalMapped = 0;
+        cylinder->isCSG = 0;
+        cylinder->isLightSource = 0;
+        cylinder->CSGnext = NULL;
+        cylinder->next = NULL; }
+        return(cylinder);
+    }
   
 }
 

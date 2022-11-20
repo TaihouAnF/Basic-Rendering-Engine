@@ -16,18 +16,18 @@
 /*****************************************************************************
 * COMPLETE THIS TEXT BOX:
 *
-* 1) Student Name:		
-* 2) Student Name:		
+* 1) Student Name:		Anson Feng
+* 2) Student Name:		Peter Chou
 *
-* 1) Student number:
-* 2) Student number:
+* 1) Student number:  1004721955
+* 2) Student number:  1004295693
 * 
-* 1) UtorID
-* 2) UtorID
+* 1) UtorID:          fengdian
+* 2) UtorID:          choulu1
 * 
 * We hereby certify that the work contained here is our own
 *
-* ____________________             _____________________
+* ______Anson Feng____             _____Peter Chou______
 * (sign with your name)            (sign with your name)
 ********************************************************************************/
 
@@ -63,10 +63,28 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
 
  /////////////////////////////////////////////////////////////
  // TO DO: Implement this function. See the notes for
- // reference of what to do in here
+ // reference of what to do in here Done.
  /////////////////////////////////////////////////////////////
-
-    
+    *lambda = -1.0;
+    struct object3D *obj_head = object_list;
+    while (obj_head) {
+        if (obj_head != Os) {
+            double temp_lambda = -1.0;
+            struct point3D temp_p;
+            struct point3D temp_n;
+            double temp_a, temp_b;
+            obj_head->intersect(obj_head, ray, &temp_lambda, &temp_p, &temp_n, &temp_a, &temp_b);
+            if ((*lambda < 0.0 || temp_lambda < *lambda) && temp_lambda > 0.0) {
+                *lambda = temp_lambda;
+                *p = temp_p;
+                *n = temp_n;
+                *a = temp_a;
+                *b = temp_b;
+                *obj = obj_head;
+            }
+        }
+        obj_head = obj_head->next;
+    }
 }
 
 void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct object3D *Os, int CEL)
