@@ -100,22 +100,25 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
  //            originates so you can discard self-intersections due to numerical
  //            errors. NULL for rays originating from the center of projection. 
  
- double lambda;			// Lambda at intersection
- double a,b;			// Texture coordinates
- struct object3D *obj;		// Pointer to object at intersection
- struct point3D p;		// Intersection point
- struct point3D n;		// Normal at intersection
- double R,G,B;			// Handy in case you need to keep track of some RGB colour value
- double dice;			// Handy to keep a random value
- struct ray3D *next_ray;	// For the new ray to be used in recursive calls
+    double lambda;			// Lambda at intersection
+    double a,b;			// Texture coordinates
+    struct object3D *obj;		// Pointer to object at intersection
+    struct point3D p;		// Intersection point
+    struct point3D n;		// Normal at intersection
+    double R,G,B;			// Handy in case you need to keep track of some RGB colour value
+    double dice;			// Handy to keep a random value
+    struct ray3D *next_ray;	// For the new ray to be used in recursive calls
  
- if (depth>MAX_DEPTH)	// Max recursion depth reached. Return black (no light coming into pixel from this path).
- {
-  col->R=ray->Ir;	// These are accumulators, initialized at 0. Whenever we find a source of light these
-  col->G=ray->Ig;	// get incremented accordingly. At the end of the recursion, we return whatever light
-  col->B=ray->Ib;	// we accumulated into these three values.
-  return;
- }
+    if (depth>MAX_DEPTH)	// Max recursion depth reached. Return black (no light coming into pixel from this path).
+    {
+        col->R=ray->Ir;	// These are accumulators, initialized at 0. Whenever we find a source of light these
+        col->G=ray->Ig;	// get incremented accordingly. At the end of the recursion, we return whatever light
+        col->B=ray->Ib;	// we accumulated into these three values.
+        return;
+    }
+    if (obj->texImg != NULL) {
+        obj->textureMap(obj->texImg, a, b, &R, &G, &B);
+    }
 
  ///////////////////////////////////////////////////////
  // TO DO: Complete this function. Refer to the notes

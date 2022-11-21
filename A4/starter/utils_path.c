@@ -584,7 +584,7 @@ void cylSample(struct object3D *cyl, double *x, double *y, double *z)
  // Sampling should be uniform over the cylinder.
 
  /////////////////////////////////
- // TO DO: Complete this function.
+ // TO DO: Complete this function. Done
  /////////////////////////////////
     double newx, newy, newz;
     struct point3D *temp;
@@ -748,9 +748,12 @@ void texMap(struct image *img, double a, double b, double *R, double *G, double 
  // interpolation to obtain the texture colour.
  //////////////////////////////////////////////////
 
- *(R)=0;	// Returns black - delete this and
- *(G)=0;	// replace with your code to compute
- *(B)=0;	// texture colour at (a,b)
+ int x = (int) (a * (img->sx - 1));
+ int y = (int) (b * (img->sy - 1));
+ double* rgbdata = (double *) img->rgbdata;
+ *(R) = (double) *(rgbdata + ((y * img->sx) + x) * 3);
+ *(G) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 1);
+ *(B) = (double) *(rgbdata + ((y * img->sx) + x) * 3 + 2);
  return;
 }
 
