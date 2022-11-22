@@ -116,14 +116,34 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
         col->B=ray->Ib;	// we accumulated into these three values.
         return;
     }
-    if (obj->texImg != NULL) {
-        obj->textureMap(obj->texImg, a, b, &R, &G, &B);
-    }
 
  ///////////////////////////////////////////////////////
  // TO DO: Complete this function. Refer to the notes
  // if you are unsure what to do here.
  ///////////////////////////////////////////////////////
+    findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
+
+    if (lambda > 0.0) {
+        
+        if (obj->texImg == NULL) { // Not textured, use obj's col
+            R = obj->col.R;
+            G = obj->col.G;
+            B = obj->col.B;
+        } else {
+            obj->textureMap(obj->texImg, a, b, &R, &G, &B);
+        }
+
+        if (obj->normalMapped) {
+            struct image *normalmap = obj->normalMap;
+            int x = (int) (a * (normalmap->sx - 1));
+            int y = (int) (b * (normalmap->sy - 1));
+            double* normaldata = (double *) normalmap->rgbdata;
+            n->px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
+            n->py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
+            n->pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
+        }
+    }
+
    
 }
 
