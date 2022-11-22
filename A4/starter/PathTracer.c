@@ -45,6 +45,18 @@ int MAX_DEPTH;
 
 #include "buildScene.c"			// Import scene definition
 
+void reflectionDirection(struct point3D *d, struct point3D *n)
+{
+    normalize(n);;
+    //reflect d about n
+    double dn = dot(d, n);
+    d->px = -(d->px - 2 * dn * n->px);
+    d->py = -(d->py - 2 * dn * n->py);
+    d->pz = -(d->pz - 2 * dn * n->pz);
+    d->pw = 1;
+    normalize(d);
+}
+
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
 {
  // Find the closest intersection between the ray and any objects in the scene.
