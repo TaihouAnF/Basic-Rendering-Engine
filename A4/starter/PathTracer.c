@@ -57,6 +57,30 @@ void reflectionDirection(struct point3D *d, struct point3D *n)
     normalize(d);
 }
 
+void refractionDirection(struct point3D *d, struct point3D *n, struct point3D *refract_d, double c, double r, double internalCheck) {
+    // refraction direction: dt = rd + (rc - sqrt(1 - r^2*(1 - c^2)))n
+    // rb
+    struct point3D *temp_dir_d = newPoint(r * d->px, r * d->py, r * d->pz);
+    temp_dir_d->pw = 0;
+    
+    // (rc - sqrt(1 - r^2*(1 - c^2)))n
+    refract_d->px = n->px;
+    refract_d->py = n->py;
+    refract_d->pz = n->pz;
+    refract_d->pw = 1;
+    double coeff = r * c - sqrt(internalCheck);
+    refract_d->px *= coeff;
+    refract_d->py *= coeff;
+    refract_d->pz *= coeff;
+
+    // dt = rd + coeff*n
+    addVectors(temp_dir_d, refract_d);
+    normalize(refract_d);
+    
+    free(temp_dir_d);
+    return;
+}
+
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
 {
  // Find the closest intersection between the ray and any objects in the scene.
