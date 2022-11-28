@@ -614,6 +614,50 @@ void cylSample(struct object3D *cyl, double *x, double *y, double *z)
     free(temp);   
 }
 
+void uniformSample(struct point3D *n, struct point3D *d) {
+    // This function returns a randomly sampled direction over
+    // a hemisphere whose pole is the normal direction n.
+    // algorithm taken from:
+    // https://www.pbr-book.org/3ed-2018/Monte_Carlo_Integration/2D_Sampling_with_Multidimensional_Transformations#UniformlySamplingaHemisphere
+    double r,theta,phi;
+    double x,y,z;
+    double v[4][4],R[4][4];
+    char line[1024];
+
+    z = drand48();
+    r = sqrt(max(0.0, (1.0 - z * z)));
+    theta = 2 * PI * drand48();
+    x = r * cos(theta);
+    y = r * sin(theta);
+
+    // Need a rotation matrix - start with identity
+    memset(&R[0][0],0,4*4*sizeof(double));
+    R[0][0] = 1.0;
+    R[1][1] = 1.0;
+    R[2][2] = 1.0;
+    R[3][3] = 1.0;
+
+    // Rotation based on cylindrical coordinate conversion
+    theta=atan2(n->py,n->px);
+    phi=acos(n->pz);
+    RotateYMat(R,phi);
+    RotateZMat(R,theta);
+
+    // Rotation based on cylindrical coordinate conversion
+    theta=atan2(n->py,n->px);
+    phi=acos(n->pz);
+    RotateYMat(R,phi);
+    RotateZMat(R,theta);
+
+    // Rotate d to align with normal 
+    d->px=x;
+    d->py=y;
+    d->pz=z;
+    d->pw=1.0;
+    matVecMult(R,d);
+    return;
+}
+
 //////////////////////////////////
 // Importance sampling for BRDF
 //////////////////////////////////

@@ -47,7 +47,7 @@ int MAX_DEPTH;
 
 void reflectionDirection(struct point3D *d, struct point3D *n)
 {
-    normalize(n);;
+    normalize(n);
     //reflect d about n
     double dn = dot(d, n);
     d->px = -(d->px - 2 * dn * n->px);
@@ -80,6 +80,8 @@ void refractionDirection(struct point3D *d, struct point3D *n, struct point3D *r
     free(temp_dir_d);
     return;
 }
+
+// Explicit LS sampling helper function here.
 
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
 {
@@ -159,28 +161,54 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
  ///////////////////////////////////////////////////////
     findFirstHit(ray, &lambda, Os, &obj, &p, &n, &a, &b);
 
-    if (lambda > 0.0) {
-        
-        if (obj->texImg == NULL) { // Not textured, use obj's col
-            R = obj->col.R;
-            G = obj->col.G;
-            B = obj->col.B;
-        } else {
-            obj->textureMap(obj->texImg, a, b, &R, &G, &B);
-        }
+    if (lambda < 0.0) { // The ray doesn't hit any obj, return
+        col->R = ray->Ir;
+        col->G = ray->Ig;
+        col->B = ray->Ib;
+        return;
+    }
 
-        if (obj->normalMapped) {
-            struct image *normalmap = obj->normalMap;
-            int x = (int) (a * (normalmap->sx - 1));
-            int y = (int) (b * (normalmap->sy - 1));
-            double* normaldata = (double *) normalmap->rgbdata;
-            n->px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
-            n->py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
-            n->pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
+    if (obj->texImg == NULL) { // Not textured, use obj's col
+        R = obj->col.R;
+        G = obj->col.G;
+        B = obj->col.B;
+    } else {
+        obj->textureMap(obj->texImg, a, b, &R, &G, &B);
+    }
+
+    if (obj->normalMapped) {
+        struct image *normalmap = obj->normalMap;
+        int x = (int) (a * (normalmap->sx - 1));
+        int y = (int) (b * (normalmap->sy - 1));
+        double* normaldata = (double *) normalmap->rgbdata;
+        n->px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
+        n->py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
+        n->pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
+    }
+
+    if (obj->isLightSource) {   // Hit an LS, increment brightness by LS's intensity
+        col->R = ray->Ir + R;
+        col->G = ray->Ig + G;
+        col->B = ray->Ib + B;
+    } else {                    // Hit an obj, random sample/importance sample a direction
+        if (diffuse) {
+            struct point3D direction;
+#ifdef __USE_IS
+            cosWeightedSample(n, &direction);
+#else
+            uniformSample(n, &direction);
+#endif
+
+#ifdef __USE_ES
+            // Explicit LS sampling helper function
+#endif
+        } else if (reflection) {
+            // reflection
+        } else {
+            // refraction(and reflection)
         }
     }
 
-   
 }
 
 int main(int argc, char *argv[])
