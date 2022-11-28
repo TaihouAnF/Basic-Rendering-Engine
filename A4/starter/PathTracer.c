@@ -187,11 +187,21 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
     }
 
     if (obj->isLightSource) {   // Hit an LS, increment brightness by LS's intensity
-        col->R = ray->Ir * R;
-        col->G = ray->Ig * G;
-        col->B = ray->Ib * B;
+        col->R = ray->R * R;
+        col->G = ray->G * G;
+        col->B = ray->B * B;
     } else {                    // Hit an obj, random sample/importance sample a direction
-        if (diffuse) {
+        dice = drand48();
+        int type = 0;
+        if (dice < obj->diffPct) {
+            type = 0;
+        } else if (dice < (obj->diffPct + obj->reflPct)) {
+            type = 1;
+        } else {
+            type = 2;
+        }
+
+        if (type == 0) {
             struct point3D direction;
 #ifdef __USE_IS
             cosWeightedSample(n, &direction);
@@ -202,8 +212,10 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #ifdef __USE_ES
             // Explicit LS sampling helper function
 #endif
+            initRay(next_ray, p, &direction);
+            double n_dot_d = dot(n, &direction);
         
-        } else if (reflection) {
+        } else if (type == 1) {
             // reflection
         } else {
             // refraction(and reflection)

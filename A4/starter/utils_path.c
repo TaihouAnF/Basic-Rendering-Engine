@@ -225,21 +225,18 @@ struct object3D *newCyl(double diffPct, double reflPct, double tranPct, double r
     if(!cylinder) fprintf(stderr, "Unable to allocate new Cylinder, out of memory.\n");
     else 
     {
-        cylinder->alb.ra = ra;
-        cylinder->alb.rd = rd;
-        cylinder->alb.rs = rs;
-        cylinder->alb.rg = rg;
+        cylinder->diffPct = diffPct;
+        cylinder->reflPct = reflPct;
+        cylinder->tranPct = tranPct;
         cylinder->col.R = r;
         cylinder->col.G = g;
         cylinder->col.B = b;
-        cylinder->alpha = alpha;
-        cylinder->r_index = R_index;
-        cylinder->shinyness = shiny;
+        cylinder->refl_sig =refl_sig;
+        cylinder->r_index = r_index;
         cylinder->intersect = &cylIntersect;
         cylinder->surfaceCoords = &cylCoordinates;
         cylinder->randomPoint = &cylSample;
         cylinder->texImg = NULL;
-        cylinder->photonMap = NULL;
         cylinder->normalMap = NULL;
         memcpy(&cylinder->T[0][0], &eye4x4[0][0], 16 * sizeof(double));
         memcpy(&cylinder->Tinv[0][0], &eye4x4[0][0], 16 * sizeof(double));
@@ -249,6 +246,7 @@ struct object3D *newCyl(double diffPct, double reflPct, double tranPct, double r
         cylinder->normalMapped = 0;
         cylinder->isCSG = 0;
         cylinder->isLightSource = 0;
+        cylinder->LSweight = 1.0;
         cylinder->CSGnext = NULL;
         cylinder->next = NULL; 
     }
