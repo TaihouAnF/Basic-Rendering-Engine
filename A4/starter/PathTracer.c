@@ -50,9 +50,9 @@ void reflectionDirection(struct point3D *d, struct point3D *n)
     normalize(n);
     //reflect d about n
     double dn = dot(d, n);
-    d->px = -(d->px - 2 * dn * n->px);
-    d->py = -(d->py - 2 * dn * n->py);
-    d->pz = -(d->pz - 2 * dn * n->pz);
+    d->px = d->px - 2 * dn * n->px;
+    d->py = d->py - 2 * dn * n->py;
+    d->pz = d->pz - 2 * dn * n->pz;
     d->pw = 1;
     normalize(d);
 }
@@ -187,9 +187,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
     }
 
     if (obj->isLightSource) {   // Hit an LS, increment brightness by LS's intensity
-        col->R = ray->Ir + R;
-        col->G = ray->Ig + G;
-        col->B = ray->Ib + B;
+        col->R = ray->Ir * R;
+        col->G = ray->Ig * G;
+        col->B = ray->Ib * B;
     } else {                    // Hit an obj, random sample/importance sample a direction
         if (diffuse) {
             struct point3D direction;
@@ -202,6 +202,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #ifdef __USE_ES
             // Explicit LS sampling helper function
 #endif
+        
         } else if (reflection) {
             // reflection
         } else {
