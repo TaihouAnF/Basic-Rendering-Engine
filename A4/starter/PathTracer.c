@@ -81,6 +81,12 @@ void refractionDirection(struct point3D *d, struct point3D *n, struct point3D *r
     return;
 }
 
+double maxIntensity(double R, double G, double B) {
+    double tmp_rg = (R > G) ? R : G;
+    double max = (tmp_rg > B) ? tmp_rg : B;
+    return max;
+}
+
 // Explicit LS sampling helper function here.
 
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -214,7 +220,21 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             next_ray->R = ray->R * R * n_dot_d;
             next_ray->G = ray->G * G * n_dot_d;
             next_ray->B = ray->B * B * n_dot_d;
-            PathTrace(next_ray, depth++, col, obj, CEL);
+
+            // Russian Roulette
+            dice = drand48();
+            double prob = dice * .25;
+            double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
+            if (prob < max) {
+                PathTrace(next_ray, depth++, col, obj, CEL);
+            } else {
+                col->R = ray->Ir;
+                col->G = ray->Ig;
+                col->B = ray->Ib;
+                free(next_ray);
+                return;
+            }
+            
         
         } else if (type == 1) { // reflection
             struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
@@ -227,8 +247,21 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;
             next_ray->B = ray->B * B;
-            PathTrace(next_ray, depth++, col, obj, CEL);
-            free(reflection_direction);
+            dice = drand48();
+            double prob = dice * .25;
+            double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
+            if (prob < max) {
+                PathTrace(next_ray, depth++, col, obj, CEL);
+                free(reflection_direction);
+            } else {
+                col->R = ray->Ir;
+                col->G = ray->Ig;
+                col->B = ray->Ib;
+                free(reflection_direction);
+                free(next_ray);
+                return;
+            }
+            
 
         } else { // refraction(and reflection)
             double c = dot(&ray->d, &n);
@@ -267,7 +300,19 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     next_ray->R = ray->R * R * Rt;
                     next_ray->G = ray->G * G * Rt;
                     next_ray->B = ray->B * B * Rt;
-                    PathTrace(next_ray, depth++, col, obj, CEL);
+                    dice = drand48();
+                    double prob = dice * .25;
+                    double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
+                    if (prob < max) {
+                        PathTrace(next_ray, depth++, col, obj, CEL);
+                    } else {
+                        col->R = ray->Ir;
+                        col->G = ray->Ig;
+                        col->B = ray->Ib;
+                        free(next_ray);
+                        return;
+                    }
+                    
                 }
             } else {
                 struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
@@ -277,13 +322,26 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 next_ray->R = ray->R * R * Rr;
                 next_ray->G = ray->G * G * Rr;
                 next_ray->B = ray->B * B * Rr;
-                PathTrace(next_ray, depth++, col, obj, CEL);
-                free(reflection_direction);
+                dice = drand48();
+                double prob = dice * .25;
+                double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
+                if (prob < max) {
+                    PathTrace(next_ray, depth++, col, obj, CEL);
+                    free(reflection_direction);
+                } else {
+                    col->R = ray->Ir;
+                    col->G = ray->Ig;
+                    col->B = ray->Ib;
+                    free(reflection_direction);
+                    free(next_ray);
+                    return;
+                }
+                
             }
         }
         free(next_ray);
     }
-
+    return;
 }
 
 int main(int argc, char *argv[])
