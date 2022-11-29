@@ -242,7 +242,6 @@ struct object3D *newCyl(double diffPct, double reflPct, double tranPct, double r
         memcpy(&cylinder->Tinv[0][0], &eye4x4[0][0], 16 * sizeof(double));
         cylinder->textureMap = &texMap;
         cylinder->frontAndBack = 0;
-        cylinder->photonMapped = 0;
         cylinder->normalMapped = 0;
         cylinder->isCSG = 0;
         cylinder->isLightSource = 0;

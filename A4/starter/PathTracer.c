@@ -64,10 +64,12 @@ void refractionDirection(struct point3D *d, struct point3D *n, struct point3D *r
     temp_dir_d->pw = 0;
     
     // (rc - sqrt(1 - r^2*(1 - c^2)))n
-    refract_d->px = n->px;
-    refract_d->py = n->py;
-    refract_d->pz = n->pz;
-    refract_d->pw = 1;
+    // refract_d->px = n->px;
+    // refract_d->py = n->py;
+    // refract_d->pz = n->pz;
+    // refract_d->pw = 1;
+    refract_d = newPoint(n->px, n->py, n->pz);
+    refract_d->pw = 0;
     double coeff = r * c - sqrt(internalCheck);
     refract_d->px *= coeff;
     refract_d->py *= coeff;
@@ -181,9 +183,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
         int x = (int) (a * (normalmap->sx - 1));
         int y = (int) (b * (normalmap->sy - 1));
         double* normaldata = (double *) normalmap->rgbdata;
-        n->px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
-        n->py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
-        n->pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
+        n.px = (double) *(normaldata + ((y * normalmap->sx) + x) * 3);
+        n.py = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 1);
+        n.pz = (double) *(normaldata + ((y * normalmap->sx) + x) * 3 + 2);
     }
 
     if (obj->isLightSource) {   // Hit an LS, increment brightness by LS's intensity
@@ -197,37 +199,89 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
         if (type == 0) {    // diffuse
             struct point3D direction;
 #ifdef __USE_IS
-            cosWeightedSample(n, &direction);
+            cosWeightedSample(&n, &direction);
 #else
-            uniformSample(n, &direction);
+            uniformSample(&n, &direction);
 #endif
 
 #ifdef __USE_ES
             // Explicit LS sampling helper function
 #endif
-            initRay(next_ray, p, &direction);
-            double n_dot_d = dot(n, &direction);
-            next_ray->R = ray->R * R;
-            next_ray->G = ray->G * G;
-            next_ray->B = ray->B * B;
+            initRay(next_ray, &p, &direction);
+            double n_dot_d = dot(&n, &direction);
+            next_ray->R = ray->R * R * n_dot_d;
+            next_ray->G = ray->G * G * n_dot_d;
+            next_ray->B = ray->B * B * n_dot_d;
             PathTrace(next_ray, depth++, col, obj, CEL);
+            free(next_ray);
         
         } else if (type == 1) { // reflection
             struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
             reflection_direction->pw = 0;
-            reflectionDirection(reflection_direction, n);
-            reflection_direction->px += obj->refl_sig * drand48();
+            reflectionDirection(reflection_direction, &n);
+            reflection_direction->px += obj->refl_sig * drand48(); // how to do normal distribution
             reflection_direction->py += obj->refl_sig * drand48();
             reflection_direction->pz += obj->refl_sig * drand48();
-            initRay(next_ray, p, reflection_direction);
+            initRay(next_ray, &p, reflection_direction);
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;
             next_ray->B = ray->B * B;
             PathTrace(next_ray, depth++, col, obj, CEL);
             free(reflection_direction);
+            free(next_ray);
 
-        } else {
-            // refraction(and reflection)
+        } else { // refraction(and reflection)
+            double c = dot(&ray->d, &n);
+            double r, n1, n2;
+            struct point3D *tmp_n = newPoint(n.px, n.py, n.pz);
+
+            if (c <= 0) {
+                c = -c;
+                n1 = 1;
+                n2 = obj->r_index;
+            } else {
+                tmp_n->px = -tmp_n->px;
+                tmp_n->py = -tmp_n->py;
+                tmp_n->pz = -tmp_n->pz;
+                n1 = obj->r_index;
+                n2 = 1;
+            }
+            r = n1 / n2;
+            double R0 = pow((n1 - n2) / (n1 + n2), 2);
+            // since double ang = acos(dot(d,n)), and d and n are both normalized
+            // dot(d,n) would give us the cos theta, and Rs only need cos theta,
+            // in this case we don't need to do:
+            //      double ang = acos(dot(d,n));
+            //      double Rs = R0 + ... + pow(1 - cos (ang), 5)
+            // we can just use the dot product.
+            double absC = fabs(c);
+            double Rr = R0 + ((1 - R0) * pow((1 - absC), 5));
+            double Rt = 1 - Rr;
+            dice = drand48();
+            if (dice < .9 * Rt + .1) {
+                struct point3D *refraction_d;
+                double intercheck = 1 - ((r * r) * (1 - (c * c)));
+                if (intercheck >= 0) {
+                    refractionDirection(&ray->d, tmp_n, refraction_d, c, r, intercheck);
+                    initRay(next_ray, &p, refraction_d);
+                    next_ray->R = ray->R * R * Rt;
+                    next_ray->G = ray->G * G * Rt;
+                    next_ray->B = ray->B * B * Rt;
+                    PathTrace(next_ray, depth++, col, obj, CEL);
+                    free(refraction_d);
+                }
+            } else {
+                struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
+                reflection_direction->pw = 0;
+                reflectionDirection(reflection_direction, &n);
+                initRay(next_ray, &p, reflection_direction);
+                next_ray->R = ray->R * R * Rr;
+                next_ray->G = ray->G * G * Rr;
+                next_ray->B = ray->B * B * Rr;
+                PathTrace(next_ray, depth++, col, obj, CEL);
+                free(reflection_direction);
+            }
+            free(next_ray);
         }
     }
 
