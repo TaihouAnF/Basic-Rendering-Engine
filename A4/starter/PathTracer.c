@@ -192,16 +192,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
         col->B = ray->B * B;
     } else {                    // Hit an obj, random sample/importance sample a direction
         dice = drand48();
-        int type = 0;
-        if (dice < obj->diffPct) {
-            type = 0;
-        } else if (dice < (obj->diffPct + obj->reflPct)) {
-            type = 1;
-        } else {
-            type = 2;
-        }
+        int type = dice < obj->diffPct ? 0 : dice < (obj->diffPct + obj->reflPct) ? 1 : 2;
 
-        if (type == 0) {
+        if (type == 0) {    // diffuse
             struct point3D direction;
 #ifdef __USE_IS
             cosWeightedSample(n, &direction);
@@ -214,9 +207,25 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #endif
             initRay(next_ray, p, &direction);
             double n_dot_d = dot(n, &direction);
+            next_ray->R = ray->R * R;
+            next_ray->G = ray->G * G;
+            next_ray->B = ray->B * B;
+            PathTrace(next_ray, depth++, col, obj, CEL);
         
-        } else if (type == 1) {
-            // reflection
+        } else if (type == 1) { // reflection
+            struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
+            reflection_direction->pw = 0;
+            reflectionDirection(reflection_direction, n);
+            reflection_direction->px += obj->refl_sig * drand48();
+            reflection_direction->py += obj->refl_sig * drand48();
+            reflection_direction->pz += obj->refl_sig * drand48();
+            initRay(next_ray, p, reflection_direction);
+            next_ray->R = ray->R * R;
+            next_ray->G = ray->G * G;
+            next_ray->B = ray->B * B;
+            PathTrace(next_ray, depth++, col, obj, CEL);
+            free(reflection_direction);
+
         } else {
             // refraction(and reflection)
         }
