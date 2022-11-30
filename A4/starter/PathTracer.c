@@ -308,9 +308,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 if (intercheck >= 0) {
                     refractionDirection(&ray->d, tmp_n, &refraction_d, c, r, intercheck);
                     initRay(next_ray, &p, &refraction_d);
-                    next_ray->R = ray->R * R * Rt;
-                    next_ray->G = ray->G * G * Rt;
-                    next_ray->B = ray->B * B * Rt;
+                    next_ray->R = ray->R * R;
+                    next_ray->G = ray->G * G;
+                    next_ray->B = ray->B * B;
                     next_ray->inside = inside;
                     dice = drand48();
                     double prob = dice * .25;
@@ -333,9 +333,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 reflection_direction->pw = 0;
                 reflectionDirection(reflection_direction, &n);
                 initRay(next_ray, &p, reflection_direction);
-                next_ray->R = ray->R * R * Rr;
-                next_ray->G = ray->G * G * Rr;
-                next_ray->B = ray->B * B * Rr;
+                next_ray->R = ray->R * R;
+                next_ray->G = ray->G * G;
+                next_ray->B = ray->B * B;
                 next_ray->inside = ray->inside;
                 dice = drand48();
                 double prob = dice * .25;
