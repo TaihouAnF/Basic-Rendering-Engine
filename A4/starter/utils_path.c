@@ -326,9 +326,17 @@ void sphereIntersect(struct object3D *sphere, struct ray3D *ray, double *lambda,
         double lambda_1 = -(B / A) + (sqrt(D) / A);
         double lambda_2 = -(B / A) - (sqrt(D) / A);
         if (lambda_2 >= lambda_1 && lambda_1 > 0.0) {
-            *lambda = lambda_1;
+            if (ray->inside) {
+                *lambda = lambda_2;
+            } else {
+                *lambda = lambda_1;
+            }
         } else if (lambda_1 > lambda_2 && lambda_2 > 0.0) {
-            *lambda = lambda_2;
+            if (ray->inside) {
+                *lambda = lambda_2;
+            } else {
+                *lambda = lambda_2;
+            }
         } else if (lambda_1 > 0.0) {
             *lambda = lambda_1;
         } else if (lambda_2 > 0.0) {
@@ -380,10 +388,14 @@ void cylIntersect(struct object3D *cylinder, struct ray3D *ray, double *lambda, 
         double lambda_w1 = (-B + sqrt(D)) / (2 * A);
         double lambda_w2 = (-B - sqrt(D)) / (2 * A);
         if (lambda_w1 > 0.0 && lambda_w2 > 0.0) {
-            lambda_wall = (lambda_w1 <= lambda_w2) ? lambda_w1 : lambda_w2;
-        } else if (lambda_w1 > 0.0 && lambda_w2 < 0.0) {
+            if (ray->inside) {
+                lambda_wall = (lambda_w1 <= lambda_w2) ? lambda_w2 : lambda_w1;
+            } else {
+                lambda_wall = (lambda_w1 <= lambda_w2) ? lambda_w1 : lambda_w2;
+            }
+        } else if (lambda_w1 > 0.0) {
             lambda_wall = lambda_w1;
-        } else if (lambda_w2 > 0.0 && lambda_w1 < 0.0) {
+        } else if (lambda_w2 > 0.0) {
             lambda_wall = lambda_w2;
         }
     }

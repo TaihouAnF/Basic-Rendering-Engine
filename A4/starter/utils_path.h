@@ -175,6 +175,7 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
  ray->srcN.py=0;
  ray->srcN.pz=1;
  ray->srcN.pw=1;
+ ray->inside = 0;
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects

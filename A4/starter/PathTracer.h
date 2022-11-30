@@ -66,6 +66,7 @@ struct ray3D{
 	struct point3D srcN;		// Source normal - needed for diffuse illumination
 	/* You may add data here to keep track of any values associated */
 	/* with this ray when implementing advanced raytracing features */
+	int inside;
 
 };
 

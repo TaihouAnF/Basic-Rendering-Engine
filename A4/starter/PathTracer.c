@@ -32,7 +32,7 @@
 ********************************************************************************/
 
 #include "utils_path.h"			// <-- This includes PathTracer.h
-//#define __USE_IS			// Use importance sampling for diffuse materials
+#define __USE_IS			// Use importance sampling for diffuse materials
 //#define __USE_ES			// Use explicit light sampling
 //#define __DEBUG			// <-- Use this to turn on/off debugging output
 
@@ -112,7 +112,7 @@ void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct
     *lambda = -1.0;
     struct object3D *obj_head = object_list;
     while (obj_head) {
-        if (obj_head != Os) {
+        if (obj_head != Os || ray->inside) {
             double temp_lambda = -1.0;
             struct point3D temp_p;
             struct point3D temp_n;
@@ -220,7 +220,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             next_ray->R = ray->R * R * n_dot_d;
             next_ray->G = ray->G * G * n_dot_d;
             next_ray->B = ray->B * B * n_dot_d;
-
+            next_ray->inside = ray->inside;
             // Russian Roulette
             dice = drand48();
             double prob = dice * .25;
@@ -247,6 +247,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;
             next_ray->B = ray->B * B;
+            next_ray->inside = ray->inside;
             dice = drand48();
             double prob = dice * .25;
             double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
@@ -267,17 +268,27 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             double c = dot(&ray->d, &n);
             double r, n1, n2;
             struct point3D *tmp_n = newPoint(n.px, n.py, n.pz);
+            int inside = ray->inside;
 
             if (c <= 0) {
                 c = -c;
                 n1 = 1;
                 n2 = obj->r_index;
-            } else {
+                inside = 1;
+            } else if (c > 0 && inside) {
                 tmp_n->px = -tmp_n->px;
                 tmp_n->py = -tmp_n->py;
                 tmp_n->pz = -tmp_n->pz;
                 n1 = obj->r_index;
                 n2 = 1;
+                inside = 0;
+            } else {
+                col->R = ray->Ir;
+                col->G = ray->Ig;
+                col->B = ray->Ib;
+                free(tmp_n);
+                free(next_ray);
+                return;
             }
             r = n1 / n2;
             double R0 = pow((n1 - n2) / (n1 + n2), 2);
@@ -300,15 +311,18 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     next_ray->R = ray->R * R * Rt;
                     next_ray->G = ray->G * G * Rt;
                     next_ray->B = ray->B * B * Rt;
+                    next_ray->inside = inside;
                     dice = drand48();
                     double prob = dice * .25;
                     double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
                     if (prob < max) {
                         PathTrace(next_ray, depth++, col, obj, CEL);
+                        free(tmp_n);
                     } else {
                         col->R = ray->Ir;
                         col->G = ray->Ig;
                         col->B = ray->Ib;
+                        free(tmp_n);
                         free(next_ray);
                         return;
                     }
@@ -322,17 +336,20 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 next_ray->R = ray->R * R * Rr;
                 next_ray->G = ray->G * G * Rr;
                 next_ray->B = ray->B * B * Rr;
+                next_ray->inside = ray->inside;
                 dice = drand48();
                 double prob = dice * .25;
                 double max = maxIntensity(next_ray->R, next_ray->G, next_ray->B);
                 if (prob < max) {
                     PathTrace(next_ray, depth++, col, obj, CEL);
                     free(reflection_direction);
+                    free(tmp_n);
                 } else {
                     col->R = ray->Ir;
                     col->G = ray->Ig;
                     col->B = ray->Ib;
                     free(reflection_direction);
+                    free(tmp_n);
                     free(next_ray);
                     return;
                 }
