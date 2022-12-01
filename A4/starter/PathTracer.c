@@ -240,9 +240,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
             reflection_direction->pw = 0;
             reflectionDirection(reflection_direction, &n);
-            reflection_direction->px += obj->refl_sig * drand48(); // how to do normal distribution
-            reflection_direction->py += obj->refl_sig * drand48();
-            reflection_direction->pz += obj->refl_sig * drand48();
+            reflection_direction->px += obj->refl_sig * (2 * drand48() - 1); // how to do normal distribution
+            reflection_direction->py += obj->refl_sig * (2 * drand48() - 1);
+            reflection_direction->pz += obj->refl_sig * (2 * drand48() - 1);
             initRay(next_ray, &p, reflection_direction);
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;

@@ -652,12 +652,6 @@ void uniformSample(struct point3D *n, struct point3D *d) {
     RotateYMat(R,phi);
     RotateZMat(R,theta);
 
-    // Rotation based on cylindrical coordinate conversion
-    theta=atan2(n->py,n->px);
-    phi=acos(n->pz);
-    RotateYMat(R,phi);
-    RotateZMat(R,theta);
-
     // Rotate d to align with normal 
     d->px=x;
     d->py=y;
