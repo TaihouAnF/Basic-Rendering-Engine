@@ -87,6 +87,7 @@ double maxIntensity(double R, double G, double B) {
     return max;
 }
 
+void explicitLsSampling (struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj) {}
 // Explicit LS sampling helper function here.
 
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
@@ -212,7 +213,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #endif
 
 #ifdef __USE_ES
-            // Explicit LS sampling helper function
+            explicitLsSampling(ray, &p, &n, obj);// Explicit LS sampling helper function
 #endif
             initRay(next_ray, &p, &direction);
             double n_dot_d = fabs(dot(&n, &direction));
