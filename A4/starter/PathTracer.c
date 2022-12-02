@@ -87,8 +87,17 @@ double maxIntensity(double R, double G, double B) {
     return max;
 }
 
-void explicitLsSampling (struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj) {}
-// Explicit LS sampling helper function here.
+void explicitLsSampling(struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj, int *CEL) {
+
+}
+
+double normalDistributeApprox() {
+    // Approximate standard normal distribution by using Irwin-Hall distribution
+    // https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
+    // and https://en.wikipedia.org/wiki/Normal_distribution#Generating_values_from_normal_distribution
+    return (drand48() + drand48() + drand48() + drand48() + drand48() + drand48() +
+            drand48() + drand48() + drand48() + drand48() + drand48() + drand48()) - 6;
+}
 
 void findFirstHit(struct ray3D *ray, double *lambda, struct object3D *Os, struct object3D **obj, struct point3D *p, struct point3D *n, double *a, double *b)
 {
@@ -213,7 +222,7 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #endif
 
 #ifdef __USE_ES
-            explicitLsSampling(ray, &p, &n, obj);// Explicit LS sampling helper function
+            explicitLsSampling(ray, &p, &n, obj, &CEL);// Explicit LS sampling helper function
 #endif
             initRay(next_ray, &p, &direction);
             double n_dot_d = fabs(dot(&n, &direction));
@@ -241,9 +250,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
             reflection_direction->pw = 0;
             reflectionDirection(reflection_direction, &n);
-            reflection_direction->px += obj->refl_sig * (2 * drand48() - 1); // how to do normal distribution
-            reflection_direction->py += obj->refl_sig * (2 * drand48() - 1);
-            reflection_direction->pz += obj->refl_sig * (2 * drand48() - 1);
+            reflection_direction->px += obj->refl_sig * normalDistributeApprox();
+            reflection_direction->py += obj->refl_sig * normalDistributeApprox();
+            reflection_direction->pz += obj->refl_sig * normalDistributeApprox();
             initRay(next_ray, &p, reflection_direction);
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;
@@ -303,15 +312,24 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             double Rr = R0 + ((1 - R0) * pow((1 - absC), 5));
             double Rt = 1 - Rr;
             dice = drand48();
-            if (dice < .9 * Rt + .1) {
+            // Ideas from pbr-books:
+            // https://www.pbr-book.org/3ed-2018/Light_Transport_I_Surface_Reflection/Sampling_Reflection_Functions#SpecularReflectionandTransmission
+            //   
+            // Using Schlick approximation of Fresnel to get approximated contribution of reflect/refract ray, which has higher contribution then it
+            // will be traced and the other got ignore, it somehow like Russ. Roule. to make sampling faster. 
+            // And it also works similar as A1 where we will modulate the intensity of the ray by R0 and Rt, 
+            // we do probability selection to modulate in A4, higher portion, higher chance to get 
+            // sampled and traced, this do the same thing as A1, when sampling number is large enough, 
+            // it would have same effect as modulating intensity directly.(.75 to be refract, .25 to be reflect if Rt = .75 and Rr = .25).
+            if (dice < Rt) { 
                 struct point3D refraction_d;
                 double intercheck = 1 - ((r * r) * (1 - (c * c)));
                 if (intercheck >= 0) {
                     refractionDirection(&ray->d, tmp_n, &refraction_d, c, r, intercheck);
                     initRay(next_ray, &p, &refraction_d);
-                    next_ray->R = ray->R * R;
-                    next_ray->G = ray->G * G;
-                    next_ray->B = ray->B * B;
+                    next_ray->R = ray->R * R; // we don't time Rt here, since we did that when doing the reflect/refract sampling 
+                    next_ray->G = ray->G * G; // and if we did that, light intensity would be dropped fast, and highly potentially 
+                    next_ray->B = ray->B * B; // be killed by Russian Roulette. (and we will lose the highlight on top of the left sphere if we do that)
                     next_ray->inside = inside;
                     dice = drand48();
                     double prob = dice * .25;
@@ -333,8 +351,11 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
                 reflection_direction->pw = 0;
                 reflectionDirection(reflection_direction, &n);
+                reflection_direction->px += obj->refl_sig * normalDistributeApprox();
+                reflection_direction->py += obj->refl_sig * normalDistributeApprox();
+                reflection_direction->pz += obj->refl_sig * normalDistributeApprox();
                 initRay(next_ray, &p, reflection_direction);
-                next_ray->R = ray->R * R;
+                next_ray->R = ray->R * R; // Same reason of not multipling Rr as Refraction above.
                 next_ray->G = ray->G * G;
                 next_ray->B = ray->B * B;
                 next_ray->inside = ray->inside;
