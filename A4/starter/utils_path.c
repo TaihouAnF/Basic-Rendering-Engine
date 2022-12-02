@@ -112,7 +112,7 @@ inline void normalTransform(struct point3D *n_orig, struct point3D *n_transforme
 /////////////////////////////////////////////
 // Object management section
 /////////////////////////////////////////////
-void insertObject(struct object3D *o, struct object3D **list)
+void insertObject(struct object3D *o, struct object3D **list, int LS_num)
 {
  if (o==NULL) return;
  // Inserts an object into the object list.

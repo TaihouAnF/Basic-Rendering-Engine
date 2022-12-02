@@ -36,44 +36,44 @@ void buildScene(void)
  Scale(o,500,500,500);
  Translate(o,-510,0,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  o=newSphere(1.0,0.0,0.0,.25,.25,.75,.05,1.4);		// Right
  Scale(o,500,500,500);
  Translate(o,510,0,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  o=newSphere(1.0,0.0,0.0,.75,.75,.75,.05,1.4);		// Back
  Scale(o,500,500,500);
  Translate(o,0,0,515);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  o=newSphere(1.0,0.0,0.0,.75,.75,.75,.02,1.4);	// Bottom
  Scale(o,500,500,500);
  Translate(o,0,-510,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  o=newSphere(1.0,0.0,0.0,.75,.75,.75,.05,1.4);		// Top
  Scale(o,500,500,500);
  Translate(o,0,510,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  // Two spheres scene
  o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,1.54);		// Refract
  Scale(o,3.75,3.75,3.75);
  Translate(o,-5,-4.0,4.5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
  o=newSphere(0.0,1.0,0.0,.99,.99,.99,.05,2.47);		// Reflect
  Scale(o,3.75,3.75,3.75);
  Translate(o,4,-3.75,6.5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 
 /*
  // Ring of refracting spheres
@@ -103,5 +103,5 @@ void buildScene(void)
  Translate(o,0,9.995,5);
  invert(&o->T[0][0],&o->Tinv[0][0]);
  o->isLightSource=1;
- insertObject(o,&object_list);
+ insertObject(o,&object_list, LS_num);
 }

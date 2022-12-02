@@ -33,7 +33,7 @@
 
 #include "utils_path.h"			// <-- This includes PathTracer.h
 #define __USE_IS			// Use importance sampling for diffuse materials
-//#define __USE_ES			// Use explicit light sampling
+#define __USE_ES			// Use explicit light sampling
 //#define __DEBUG			// <-- Use this to turn on/off debugging output
 
 // A couple of global structures and data: An object list, a light list, and the
@@ -41,6 +41,7 @@
 struct object3D *object_list;
 struct textureNode *texture_list;
 unsigned long int NUM_RAYS;
+int LS_num = 0;
 int MAX_DEPTH;
 
 #include "buildScene.c"			// Import scene definition
@@ -87,8 +88,55 @@ double maxIntensity(double R, double G, double B) {
     return max;
 }
 
-void explicitLsSampling(struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj, int *CEL) {
+void explicitLsSampling(struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj, struct ray3D *next_ray, double R, double G, double B) {
+    struct object3D *curr;
+    struct object3D *currLS = NULL;
+    while (!currLS) {
+        curr = object_list;
+        while (curr) {
+            double dice = drand48();
+            double prb = 1 / LS_num;
+            if (curr->isLightSource && dice <= prb) {
+                currLS = curr;
+                double x, y, z;
+                curr->randomPoint(curr, &x, &y, &z);
+                
+                struct ray3D explicit_ray;
+                struct point3D *explicit_dir = newPoint(x, y, z);
+                subVectors(p, explicit_dir);
+                initRay(&explicit_ray, p, explicit_dir);
+                struct point3D temp_p, temp_n;
+                struct object3D *temp_int_obj;
+                double temp_lam, temp_a, temp_b;
+                findFirstHit(&explicit_ray, &temp_lam, obj, &temp_int_obj, 
+                            &temp_p, &temp_n, &temp_a, &temp_b);
+                if (!(temp_lam > 0 && temp_lam < 1)) {
+                    explicit_dir->pw = 0;
+                    double distance_sq = dot(explicit_dir, explicit_dir);
+                    normalize(explicit_dir);
+                    struct point3D rev_dir;
+                    rev_dir.px = -explicit_dir->px;
+                    rev_dir.py = -explicit_dir->py;
+                    rev_dir.pz = -explicit_dir->pz;
+                    rev_dir.pw = 0;
+                    
+                    double coeff = (curr->LSweight * dot(&ray->srcN, explicit_dir) *
+                               dot(&temp_n, &rev_dir)) / distance_sq;
+                    double w = (coeff <= 1) ? coeff : 1;
+                    next_ray->Ir += ray->R * R * w;
+                    next_ray->Ig += ray->G * G * w;
+                    next_ray->Ib += ray->B * B * w;
 
+                    next_ray->LSourceHit = curr;
+
+                }
+                free(explicit_dir);
+                break;
+            }
+            curr = curr->next;
+        }
+    }
+    return;
 }
 
 double normalDistributeApprox() {
@@ -204,9 +252,15 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
     }
 
     if (obj->isLightSource) {   // Hit an LS, increment brightness by LS's intensity
-        col->R = ray->R * R;
-        col->G = ray->G * G;
-        col->B = ray->B * B;
+        if (CEL && ray->LSourceHit != NULL && ray->LSourceHit == obj) {
+            col->R = ray->Ir;
+            col->G = ray->Ig;
+            col->B = ray->Ib;
+        } else {
+            col->R = ray->R * R;
+            col->G = ray->G * G;
+            col->B = ray->B * B;
+        }
         free(next_ray);
         return;
     } else {                    // Hit an obj, random sample/importance sample a direction
@@ -220,12 +274,12 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
 #else
             uniformSample(&n, &direction);
 #endif
-
-#ifdef __USE_ES
-            explicitLsSampling(ray, &p, &n, obj, &CEL);// Explicit LS sampling helper function
-#endif
             initRay(next_ray, &p, &direction);
             double n_dot_d = fabs(dot(&n, &direction));
+            if (CEL) {
+                ray->srcN = n;
+                explicitLsSampling(ray, &p, &n, obj, next_ray, R, G, B);// Explicit LS sampling helper function
+            }
             
             next_ray->R = ray->R * R * n_dot_d;
             next_ray->G = ray->G * G * n_dot_d;
@@ -409,6 +463,13 @@ int main(int argc, char *argv[])
  double *wght;			// Holds weights for each pixel - to provide log response
  double pct,wt;
  
+ int CEL;
+#ifdef __USE_ES
+  CEL = 1;
+#else 
+  CEL = 0;
+#endif
+
  time_t t1,t2;
  FILE *f;
 				
@@ -552,7 +613,7 @@ int main(int argc, char *argv[])
     initRay(&ray, &pc,&d);
 
     wt=*(wght+i+(j*sx));
-    PathTrace(&ray,1, &col,NULL,1);
+    PathTrace(&ray,1, &col,NULL,CEL);
     (*(rgbIm+((i+(j*sx))*3)+0))+=col.R*pow(2,-log(wt));
     (*(rgbIm+((i+(j*sx))*3)+1))+=col.G*pow(2,-log(wt));
     (*(rgbIm+((i+(j*sx))*3)+2))+=col.B*pow(2,-log(wt));

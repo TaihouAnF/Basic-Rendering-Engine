@@ -21,8 +21,6 @@
 #ifndef __utils_header
 #define __utils_header
 
-static int LS_num = 0;
-
 // Functions to apply transformations to objects.
 // If you add any transformations to the list below, document them carefully
 inline void matMult(double A[4][4], double B[4][4])
@@ -216,7 +214,7 @@ void texMap(struct image *img, double a, double b, double *R, double *G, double 
 void alphaMap(struct image *img, double a, double b, double *R, double *G, double *B);
 
 // Functions to insert objects and lights into their respective lists
-void insertObject(struct object3D *o, struct object3D **list);
+void insertObject(struct object3D *o, struct object3D **list, int LS_num);
 void addAreaLight(double sx, double sy, double nx, double ny, double nz,\
                   double tx, double ty, double tz, int lx, int ly,\
                   double r, double g, double b, struct object3D **o_list, struct pointLS **l_list);
