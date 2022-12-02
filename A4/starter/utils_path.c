@@ -120,11 +120,17 @@ void insertObject(struct object3D *o, struct object3D **list)
  {
   *(list)=o;
   (*(list))->next=NULL;
+  if (o->isLightSource) {
+    LS_num++;
+  }
  }
  else
  {
   o->next=(*(list))->next;
   (*(list))->next=o;
+  if (o->isLightSource) {
+    LS_num++;
+  }
  }
 }
 

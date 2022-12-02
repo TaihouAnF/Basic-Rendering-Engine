@@ -21,6 +21,8 @@
 #ifndef __utils_header
 #define __utils_header
 
+static int LS_num = 0;
+
 // Functions to apply transformations to objects.
 // If you add any transformations to the list below, document them carefully
 inline void matMult(double A[4][4], double B[4][4])
@@ -176,6 +178,7 @@ inline void initRay(struct ray3D *ray, struct point3D *p0, struct point3D *d)
  ray->srcN.pz=1;
  ray->srcN.pw=1;
  ray->inside = 0;
+ ray->LSourceHit = NULL;
 }
 
 // Ray and normal transformations to enable the use of canonical intersection tests with transformed objects
