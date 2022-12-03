@@ -311,6 +311,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
             next_ray->R = ray->R * R;
             next_ray->G = ray->G * G;
             next_ray->B = ray->B * B;
+            next_ray->Ir = ray->Ir;
+            next_ray->Ig = ray->Ig;
+            next_ray->Ib = ray->Ib;
             next_ray->inside = ray->inside;
             dice = drand48();
             double prob = dice * .25;
@@ -384,6 +387,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                     next_ray->R = ray->R * R; // we don't time Rt here, since we did that when doing the reflect/refract sampling 
                     next_ray->G = ray->G * G; // and if we did that, light intensity would be dropped fast, and highly potentially 
                     next_ray->B = ray->B * B; // be killed by Russian Roulette. (and we will lose the highlight on top of the left sphere if we do that)
+                    next_ray->Ir = ray->Ir;
+                    next_ray->Ig = ray->Ig;
+                    next_ray->Ib = ray->Ib;
                     next_ray->inside = inside;
                     dice = drand48();
                     double prob = dice * .25;
@@ -412,6 +418,9 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 next_ray->R = ray->R * R; // Same reason of not multipling Rr as Refraction above.
                 next_ray->G = ray->G * G;
                 next_ray->B = ray->B * B;
+                next_ray->Ir = ray->Ir;
+                next_ray->Ig = ray->Ig;
+                next_ray->Ib = ray->Ib;
                 next_ray->inside = ray->inside;
                 dice = drand48();
                 double prob = dice * .25;
