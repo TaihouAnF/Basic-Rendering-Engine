@@ -91,12 +91,11 @@ double maxIntensity(double R, double G, double B) {
 void explicitLsSampling(struct ray3D *ray, struct point3D *p, struct point3D *n, struct object3D *obj, struct ray3D *next_ray, double R, double G, double B) {
     struct object3D *curr;
     struct object3D *currLS = NULL;
+    double prb = 1 / (double)LS_num;
     while (!currLS) {
         curr = object_list;
         while (curr) {
-            double dice = drand48();
-            double prb = 1 / (double)LS_num;
-            if (curr->isLightSource && dice <= prb) {
+            if (curr->isLightSource && drand48() <= prb) {
                 currLS = curr;
                 double x, y, z;
                 curr->randomPoint(curr, &x, &y, &z);
@@ -123,9 +122,9 @@ void explicitLsSampling(struct ray3D *ray, struct point3D *p, struct point3D *n,
                     double coeff = (curr->LSweight * dot(&ray->srcN, explicit_dir) *
                                dot(&temp_n, &rev_dir)) / distance_sq;
                     double w = (coeff <= 1) ? coeff : 1;
-                    next_ray->Ir += ray->R * curr->col.R * R * w;
-                    next_ray->Ig += ray->G * curr->col.G * G * w;
-                    next_ray->Ib += ray->B * curr->col.B * B * w;
+                    next_ray->Ir += ray->Ir + ray->R * curr->col.R * R * w;
+                    next_ray->Ig += ray->Ig + ray->G * curr->col.G * G * w;
+                    next_ray->Ib += ray->Ib + ray->B * curr->col.B * B * w;
 
                     next_ray->LSourceHit = curr;
 
