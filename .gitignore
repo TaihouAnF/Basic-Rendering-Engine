@@ -10,3 +10,8 @@ CMakeLists.txt
 cmake-build-debug
 cmake-build-debug/**
 A2/starter/test.ppm
+A4/starter/Cornell_IS_ES_realtest_2.ppm
+A4/starter/Cornell_IS_ES_realtest.ppm
+A4/starter/Cornell_IS_ES_test2.ppm
+A4/starter/Cornell_IS_noES_test_5.ppm
+A4/starter/Cornell_IS_noES_test2.ppm
