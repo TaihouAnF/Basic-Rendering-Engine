@@ -65,7 +65,7 @@ for (int j=0; j < objnum; j++) {
 }
 
 o=newPlane(1.00,0.00,0.0,.25,.25,.75,0.0,1.54);
-Scale(o,40,40,40);
+Scale(o,45,45,45);
 RotateZ(o,PI/2);
 Translate(o,0,5,40);
 invert(&o->T[0][0],&o->Tinv[0][0]);
