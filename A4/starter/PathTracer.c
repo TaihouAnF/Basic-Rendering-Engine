@@ -297,8 +297,6 @@ void PathTrace(struct ray3D *ray, int depth, struct colourRGB *col, struct objec
                 free(next_ray);
                 return;
             }
-            
-        
         } else if (type == 1) { // reflection
             struct point3D *reflection_direction = newPoint(ray->d.px, ray->d.py, ray->d.pz);
             reflection_direction->pw = 0;
@@ -488,7 +486,7 @@ int main(int argc, char *argv[])
   fprintf(stderr,"   size = Image size (both along x and y)\n");
   fprintf(stderr,"   rec_depth = Recursion depth\n");
   fprintf(stderr,"   num_samples = Number of samples per pixel\n");
-  fprintf(stderr,"   output_name = Name of the output file, e.g. MyRender.ppm\n");
+  fprintf(stderr,"   output_name = Name of the output file, e.g. finalscene.ppm\n");
   exit(0);
  }
  sx=atoi(argv[1]);

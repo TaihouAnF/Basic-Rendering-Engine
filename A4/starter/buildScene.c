@@ -28,80 +28,81 @@ void buildScene(void)
  // NOTE: After setting up the transformations for each object, don't
  //       forget to set up the inverse transform matrix!
 
- struct object3D *o;
- struct point3D p;
+struct object3D *o;
+struct point3D p;
+// Cornell box
+int objnum = 10;
+for (int j=0; j < objnum; j++) {
+    // x between -5 and 5
+    // y between -5 and 5
+    // z between 0 and 10
+    float x = (rand() % 1000) / 100.0 - 5.0;
+    float y = (rand() % 1000) / 100.0 - 5.0;
+    float z = 10 + j * 5;
+    // random rgb value
+    float r = (rand() % 1000) / 1000.0;
+    float g = (rand() % 1000) / 1000.0;
+    float b = (rand() % 1000) / 1000.0;
+    // generate 0 and 1 and 2
+    int type = rand() % 3;
 
- // Cornell box
- o=newSphere(1.0,0.0,0.0,.75,.25,.25,.05,1.4);	// Left
- Scale(o,500,500,500);
- Translate(o,-510,0,5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
+    if (type == 0) {
+        o=newSphere(1.0,0.0,0.0,r,g,b,.05,2.47);		// Diffuse
+        Translate(o,x,y,z);
+        invert(&o->T[0][0],&o->Tinv[0][0]);
+        insertObject(o,&object_list, LS_num);
+    } else if (type == 1) {
+        o=newSphere(0.0,1.0,0.0,r,g,b,.05,2.47);		// Reflective
+        Translate(o,x,y,z);
+        invert(&o->T[0][0],&o->Tinv[0][0]);
+        insertObject(o,&object_list, LS_num);
+    } else {
+        o=newSphere(0.0,0.0,1.0,r,g,b,.05,2.47);		// Refractive
+        Translate(o,x,y,z);
+        invert(&o->T[0][0],&o->Tinv[0][0]);
+        insertObject(o,&object_list, LS_num);
+    }
+}
 
- o=newSphere(1.0,0.0,0.0,.25,.25,.75,.05,1.4);		// Right
- Scale(o,500,500,500);
- Translate(o,510,0,5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
+o=newPlane(1.00,0.00,0.0,.25,.25,.75,0.0,1.54);
+Scale(o,40,40,40);
+RotateZ(o,PI/2);
+Translate(o,0,5,40);
+invert(&o->T[0][0],&o->Tinv[0][0]);
+loadTexture(o, "./Texture/skybox.ppm", 1, &texture_list);
+o->isLightSource=1;
+insertObject(o,&object_list, LS_num);
 
- o=newSphere(1.0,0.0,0.0,.75,.75,.75,.05,1.4);		// Back
- Scale(o,500,500,500);
- Translate(o,0,0,515);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
+o=newSphere(1.00,0.00,0.0,1.0,1.0,1.0,0.0,1.54);
+Translate(o,0,10,5);
+invert(&o->T[0][0],&o->Tinv[0][0]);
+o->isLightSource=1;
+insertObject(o,&object_list, LS_num);
 
- o=newSphere(1.0,0.0,0.0,.75,.75,.75,.02,1.4);	// Bottom
- Scale(o,500,500,500);
- Translate(o,0,-510,5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
+int stars = 120;
+for (int i=0; i<50;i++) {
+    // Planar light source at top
+    o=newSphere(1.00,0.00,0.0,1.0,1.0,1.0,0.0,1.54);
+    //generate y between 10 and 20
+    float y = (rand() % 1000) / 100.0 + 10.0;
+    Translate(o,0,10,5);
+    invert(&o->T[0][0],&o->Tinv[0][0]);
+    o->isLightSource=1;
+    insertObject(o,&object_list, LS_num);
+}
 
- o=newSphere(1.0,0.0,0.0,.75,.75,.75,.05,1.4);		// Top
- Scale(o,500,500,500);
- Translate(o,0,510,5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
+for (int i=0; i<stars;i++) {
+    // Planar light source at top
+    o=newSphere(1.00,0.00,0.0,1.0,1.0,1.0,0.0,1.54);
+    //generate x between 10 and 20
+    float x = (rand() % 1000) / 100.0 + 10.0;
+    //generate y between -20 and 20
+    float y = (rand() % 50) - 50;
+    Scale(o,0.1,0.1,0.1);
+    Translate(o,x,y+15,10);
+    invert(&o->T[0][0],&o->Tinv[0][0]);
+    o->isLightSource=1;
+    insertObject(o,&object_list, LS_num);
+}
 
- // Two spheres scene
- o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,1.54);		// Refract
- Scale(o,3.75,3.75,3.75);
- Translate(o,-5,-4.0,4.5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
-
- o=newSphere(0.0,1.0,0.0,.99,.99,.99,.05,2.47);		// Reflect
- Scale(o,3.75,3.75,3.75);
- Translate(o,4,-3.75,6.5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- insertObject(o,&object_list, LS_num);
-
-/*
- // Ring of refracting spheres
- for (int i=0; i<5;i++)
- {
-  o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,1.45+(.1*i));
-  Scale(o,1.75,1.75,1.75);
-  Translate(o,3.25*cos(2*PI*i/5),-2.45,3+3.25*sin(2*PI*i/5));
-  invert(&o->T[0][0],&o->Tinv[0][0]);
-  insertObject(o,&object_list);
- }
-
- for (int i=0; i<7;i++)
- {
-  o=newSphere(0.0,0.0,1.0,.99,.99,.99,.01,2.00+(.05*i));
-  Scale(o,1.75,1.75,1.75);
-  Translate(o,4.60*cos(2*PI*i/7),-6.35,3+4.60*sin(2*PI*i/7));
-  invert(&o->T[0][0],&o->Tinv[0][0]);
-  insertObject(o,&object_list);
- }
-*/
-
- // Planar light source at top
- o=newPlane(1.00,0.00,0.0,1.0,1.0,1.0,0.0,1.54);
- Scale(o,.5,2.5,1);
- RotateX(o,PI/2);
- Translate(o,0,9.995,5);
- invert(&o->T[0][0],&o->Tinv[0][0]);
- o->isLightSource=1;
- insertObject(o,&object_list, LS_num);
 }
