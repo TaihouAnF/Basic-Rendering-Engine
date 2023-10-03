@@ -6,9 +6,7 @@
   </p>
 </div>
 
-
-  
-  ## Table of Contents</summary>
+## Table of Contents</summary>
   <ol>
     <li><a href="#about-the-project">About The Project</a></li>
     <li><a href="#usage">Usage</a></li>
@@ -21,3 +19,4 @@
 ## About The Project
 This is a project to showcase our understanding of 3D graphics and maths, ray-tracing techniques, and other simulations to generate nice-looking scenes. 
 
+## 2D Renderer
