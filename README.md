@@ -20,3 +20,4 @@
 This is a project to showcase our understanding of 3D graphics and maths, ray-tracing techniques, and other simulations to generate nice-looking scenes. 
 
 ## 2D Renderer
+![2D Simulation Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/light2D_output.png)
