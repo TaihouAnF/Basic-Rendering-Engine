@@ -44,7 +44,7 @@ To run a feature and see the demo:
   ```
   
 
-## 1. 2D Renderer
+## 2D Renderer
 
 The first feature of this project is a simulation of light rays in 2D.  
 It would have at least one single-point light source for each scene. And in the scene, we can set up multiple round objects with different properties.  
@@ -55,4 +55,14 @@ This Demo shows a 1024 * 1024 scene with a point light source at the center with
 
 ![2D Simulation Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/light2D_output.png)
 
+## 3D Renderer
 
+This is where the fun begins.  
+This feature projects the 3D space into a 2D scene by utilizing the [**Backward Ray Tracing**](https://en.wikipedia.org/wiki/Ray_tracing_(graphics)) technique.  
+During the process of generation, the engine would shoot a ray for each pixel on the 2D screen/plane, check whether it collides with any objects in the 3D space, and calculate the RGB value for that pixel once the ray terminated.  
+The ray would terminate under: 1. it hits nothing; 2. it reaches the limit of recursion time.  
+And for the calculation of RGB, we used a local illumination model called [**"Phong Model"**](https://en.wikipedia.org/wiki/Phong_reflection_model).  
+
+### Demo
+
+![3D Raytracer Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/full.png)
