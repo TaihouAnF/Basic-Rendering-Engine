@@ -51,9 +51,14 @@ It would have at least one single-point light source for each scene. And in the 
 The Renderer supports **light ray emission, diffusion, perfect reflection, and refraction**.
 
 ### Demo
-This Demo shows a 1024 * 1024 scene with a point light source at the center with 12 reflective circles and 12 refractive circles around, light rays will diffuse on walls.  
+This Demo shows a *1024 * 1024* scene of:
+  * a point light source at the center;
+  * 12 reflective circles and
+  * 12 refractive circles around;
+  * light rays will diffuse on walls;  
 
 ![2D Simulation Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/light2D_output.png)
+
 
 ## 3D Renderer
 
@@ -63,6 +68,35 @@ During the process of generation, the engine would shoot a ray for each pixel on
 The ray would terminate under: 1. it hits nothing; 2. it reaches the limit of recursion time.  
 And for the calculation of RGB, we used a local illumination model called [**"Phong Model"**](https://en.wikipedia.org/wiki/Phong_reflection_model).  
 
-### Demo
+### Example
+This Demo shows a *512 * 512* scene of:
+* one point light source behind the camera,
+* together with two affinely transform sphere with different factor of reflection, diffsusion & RGBs,
+* and one full diffusive plane(no reflection at all).  
+
+As you can see, the engine supports specular reflection, diffuse, and ambient lighting, it also supports **recusive reflection**.
 
 ![3D Raytracer Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/full.png)
+
+
+## Advanced Renderer
+
+This feature is based on the basic [**3D Renderer**](#3d-renderer), we modified and added implementation to supports new features, including:
+  *  Multi-Threading To Boost The Performance
+  *  Random Sampling Light Ray Directions
+  *  Anti-Aliasing
+  *  Area Light Source & Soft Shadows 
+  *  Mapping:
+      *  Alpha Mappings
+      *  Texture Mappings
+      *  Normal Mappings
+  *  Refraction on Arbitrarily Nubmer of Nested Refractive Objects(An Object inside on another Object)  
+
+We were planned to finish other feature but we didn't have enough time for those, which includes but not limited to:
+  *  Depth Of Field Effect(WIP)
+  * Octree Structure & Ray collide Detection
+  * Photon Mapping
+  * And Others
+
+### Example
+![Advanced_Renderer_Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/Advanced.png)
