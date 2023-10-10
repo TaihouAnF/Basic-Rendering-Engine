@@ -12,7 +12,7 @@
     <li><a href="#usage">Usage</a></li>
     <li><a href="#2d-renderer">2D Renderer</a></li>
     <li><a href="#3d-renderer">3D Renderer</a></li>
-    <li><a href="#adv-renderer">Advanced Renderer</a></li>
+    <li><a href="#advanced-renderer">Advanced Renderer</a></li>
     <li><a href="#path-tracing">Path Tracer</a></li>
   </ol>
 
