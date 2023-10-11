@@ -13,7 +13,7 @@
     <li><a href="#2d-renderer">2D Renderer</a></li>
     <li><a href="#3d-renderer">3D Renderer</a></li>
     <li><a href="#advanced-renderer">Advanced Renderer</a></li>
-    <li><a href="#path-tracing">Path Tracer</a></li>
+    <li><a href="#path-tracer">Path Tracer</a></li>
   </ol>
 
 ## About The Project
@@ -57,8 +57,11 @@ This Demo shows a *1024 * 1024* scene of:
   * 12 refractive circles around;
   * light rays will diffuse on walls;  
 
-![2D Simulation Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/light2D_output.png)
+<div align="center">
 
+  ![2D Simulation Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/light2D_output.png)
+
+</div>
 
 ## 3D Renderer
 
@@ -76,7 +79,11 @@ This Demo shows a *512 * 512* scene of:
 
 As you can see, the engine supports specular reflection, diffuse, and ambient lighting, it also supports **recusive reflection**.
 
-![3D Raytracer Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/full.png)
+<div align="center">
+  
+  ![3D Raytracer Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/full.png)
+  
+</div>
 
 
 ## Advanced Renderer
@@ -94,9 +101,36 @@ This feature is based on the basic [**3D Renderer**](#3d-renderer), we modified 
 
 We were planned to finish other feature but we didn't have enough time for those, which includes but not limited to:
   *  Depth Of Field Effect(WIP)
-  * Octree Structure & Ray collide Detection
-  * Photon Mapping
-  * And Others
+  *  Octree Structure & Ray collide Detection
+  *  Photon Mapping
+  *  And Others
 
 ### Example
-![Advanced_Renderer_Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/Advanced.png)
+
+<div align="center">
+
+  ![Advanced_Renderer_Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/Advanced.png)
+
+</div>
+
+## Path Tracer
+
+The last feature of this engine would be the [**Path Tracer**](https://en.wikipedia.org/wiki/Path_tracing) which would sample light rays in each pixel, then use the average value of RGBs of each light ray as the final color for that pixel.  
+It will contians *noises* as we're sampling light rays with arbitrary direction would cannot guarantee each light ray can hit a light source.
+
+### Example
+
+#### Cornell Box
+<div align="center">
+
+  ![Cornell Box](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/Cornell_IS_ES.png)
+  
+</div>
+
+#### Final Demo
+<div align="center">
+
+  ![Final Demo](https://github.com/TaihouAnF/Basic-Rendering-Engine/blob/main/Demo/WE_HAVE_CONQUERED_CG.png)
+  
+</div>
+
