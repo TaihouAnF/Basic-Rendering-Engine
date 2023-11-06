@@ -20,7 +20,7 @@
 This is a project to showcase our understanding of 3D graphics and maths, ray-tracing techniques, and other simulations to generate nice-looking scenes. 
 
 ## Usage
-You will need to have an environment that can compile **C** language.(Linux or minGW)
+You will need to have an environment that can compile **C** language. (Linux or minGW)
 There are compile shell scripts for each feature, you can directly run the script or simply type the script yourself and run it.
 To run a feature and see the demo:
 * 2D Renderer
@@ -97,7 +97,7 @@ This feature is based on the basic [**3D Renderer**](#3d-renderer), we modified 
       *  Alpha Mappings
       *  Texture Mappings
       *  Normal Mappings
-  *  Refraction on Arbitrarily Nubmer of Nested Refractive Objects(An Object inside on another Object)  
+  *  Refraction on Arbitrarily Nubmer of Nested Refractive Objects (An Object inside on another Object)  
 
 We were planned to finish other feature but we didn't have enough time for those, which includes but not limited to:
   *  Depth Of Field Effect(WIP)
